@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PinFinder.UI", "src\PinFind
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pinfinder.Validation", "src\Pinfinder.Validation\Pinfinder.Validation.csproj", "{13871386-D224-FFF9-1F01-CE1765A5516D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyApplication", "src\MyApplication\MyApplication.csproj", "{17228FF7-5646-28DB-C933-1D41D8CDA871}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,6 +31,10 @@ Global
 		{13871386-D224-FFF9-1F01-CE1765A5516D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{13871386-D224-FFF9-1F01-CE1765A5516D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{13871386-D224-FFF9-1F01-CE1765A5516D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{17228FF7-5646-28DB-C933-1D41D8CDA871}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{17228FF7-5646-28DB-C933-1D41D8CDA871}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{17228FF7-5646-28DB-C933-1D41D8CDA871}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{17228FF7-5646-28DB-C933-1D41D8CDA871}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
