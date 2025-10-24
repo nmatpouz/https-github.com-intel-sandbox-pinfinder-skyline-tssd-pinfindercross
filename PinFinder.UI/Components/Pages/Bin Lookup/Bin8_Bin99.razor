@@ -1,0 +1,190 @@
+﻿@page "/bin8_bin99"
+@namespace PinFinder.UI.Pages
+@using MudBlazor
+@using PinFinder.Core.Controllers
+@using PinFinder.Core.Domain.Commands.Replies
+@using PinFinder.UI
+@using DrawingColor = System.Drawing.Color
+@using System.Drawing
+@using static MudBlazor.CategoryTypes
+@using System.Net.Http.Json
+@using System.Text.Json
+@using System.Text.Json.Serialization;
+@inject HttpClient Http
+@inject ProductConfigQueryController ProdConfigController;
+@inject ProductDetailQueryController ProductDetailsController;
+@inject NavigationManager Navigation
+@inject ProductStateService ProductState
+
+<MudText Typo="Typo.h6" GutterBottom="true">Supported Mapping for Bin8/Bin99</MudText>
+
+<MudTextField @bind-Value="searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="MudBlazor.Size.Medium" Class="mb-4" Clearable="true" OnClearButtonClick="ClearSearch"></MudTextField>
+
+<MudTable Items="@filteredProductList" Dense="true" Hover="true" Bordered="true" Striped="false" RowClassFunc="GetRowClass" @bind-SelectedItem="selectedItem">
+    <HeaderContent>
+        <MudTh>Package ID</MudTh>
+        <MudTh>Test Program</MudTh>
+        <MudTh>TIU</MudTh>
+        <MudTh>Interface Unit Design ID</MudTh>
+        <MudTh>Manufactured Unit Design ID</MudTh>
+    </HeaderContent>
+    <RowTemplate Context="product">
+        <MudTd DataLabel="Package ID">@product.PackageIdSearchText</MudTd>
+        <MudTd DataLabel="Test Program">@product.TestProgramSearchText</MudTd>
+        <MudTd DataLabel="TIU">@product.InterfaceUnitIdSearchText</MudTd>
+        <MudTd DataLabel="Interface Unit Design ID">@product.InterfaceUnitDesignId</MudTd>
+        <MudTd DataLabel="Manufactured Unit Design ID">@product.ManufacturedUnitDesignId</MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager PageSizeOptions="new int[] { 15, 20, 30, 40, 50, 100, int.MaxValue }" />
+    </PagerContent>
+</MudTable>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <MudAlert Color="Color.Error" Severity="Severity.Error">@errorMessage</MudAlert>
+}
+
+@code {
+    private bool isExpanded = false;
+    private List<string> clickedEvents = new();
+    private List<ProductBinModel> productList = new List<ProductBinModel>();
+    private string searchString = string.Empty;
+    private ProductBinModel selectedItem = null;
+    private int currentPage = 0;
+    private int rowsPerPage = 10;
+
+    public class ProductBinModel
+    {
+        public string PackageIdSearchText { get; set; } = string.Empty;
+        public string TestProgramSearchText { get; set; } = string.Empty;
+        public string InterfaceUnitIdSearchText { get; set; } = string.Empty;
+        public string InterfaceUnitDesignId { get; set; } = string.Empty;
+        public string ManufacturedUnitDesignId { get; set; } = string.Empty;
+    }
+
+    private IEnumerable<ProductBinModel> filteredProductList => productList.Where(p =>
+        string.IsNullOrEmpty(searchString) ||
+        (p.PackageIdSearchText?.Contains(searchString, StringComparison.OrdinalIgnoreCase) ?? false) ||
+        (p.TestProgramSearchText?.Contains(searchString, StringComparison.OrdinalIgnoreCase) ?? false) ||
+        (p.InterfaceUnitIdSearchText?.Contains(searchString, StringComparison.OrdinalIgnoreCase) ?? false) ||
+        (p.InterfaceUnitDesignId?.Contains(searchString, StringComparison.OrdinalIgnoreCase) ?? false) ||
+        (p.ManufacturedUnitDesignId?.Contains(searchString, StringComparison.OrdinalIgnoreCase) ?? false)
+    );
+
+    private List<ProductDetailsModel> productDetailsList = new List<ProductDetailsModel>();
+
+    public class ProductDetailsModel
+    {
+        public string ChannelNum { get; set; } = string.Empty;
+        public string SocketId { get; set; } = string.Empty;
+        public string TIUName { get; set; } = string.Empty;
+        public string MUName { get; set; } = string.Empty;
+        public string Connector { get; set; } = string.Empty;
+    }
+
+    private IEnumerable<ProductBinModel> pagedProductList => filteredProductList
+        .Skip(currentPage * rowsPerPage)
+        .Take(rowsPerPage);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await FetchDataAsync();
+    }
+
+    private string errorMessage = string.Empty;
+
+    public async Task FetchDataAsync()
+    {
+        try
+        {
+            var responseB8LookUp = await ProdConfigController.GetLookupB8ConfigData(true);
+            if (responseB8LookUp.LookupB8ConfigList != null)
+            {
+                foreach (var prodconfig in responseB8LookUp.LookupB8ConfigList)
+                {
+                    var productList_ = new ProductBinModel
+                        {
+                            PackageIdSearchText = prodconfig.PackageId,
+                            TestProgramSearchText = prodconfig.TestProgram,
+                            InterfaceUnitIdSearchText = prodconfig.TIU,
+                            InterfaceUnitDesignId = prodconfig.IUDesignId,
+                            ManufacturedUnitDesignId = prodconfig.MUDesignId,
+                        };
+                    productList.Add(productList_);
+                }
+            }
+            else
+            {
+                errorMessage = "Failed to fetch data from the Bin 8 Look-Up controller.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred: {ex.Message}";
+        }
+    }
+
+    private string GetRowClass(ProductBinModel product, int rowNumber)
+    {
+        return rowNumber % 2 == 0 ? "custom-striped-row" : string.Empty;
+    }
+
+    private void ClearSearch()
+    {
+        searchString = string.Empty;
+    }
+
+    private async Task<TableData<ProductBinModel>> LoadServerData(TableState state)
+    {
+        currentPage = state.Page;
+        rowsPerPage = state.PageSize;
+
+        var data = new TableData<ProductBinModel>
+            {
+                Items = pagedProductList.ToList(),
+                TotalItems = filteredProductList.Count()
+            };
+
+        return await Task.FromResult(data);
+    }
+
+    // public async Task OnRowClick(TableRowClickEventArgs<ProductBinModel> args)
+    // {
+    //     var product = args.Item;
+    //     string package = product.PackageIdSearchText;
+    //     string program = product.TestProgramSearchText;
+    //     string tiuid = product.InterfaceUnitIdSearchText;
+
+    //     // Clear previous details
+    //     productDetailsList.Clear();
+
+    //     try
+    //     {
+    //         var responseProdDetails = await ProductDetailsController.GetProductDetailData(package, program, tiuid);
+    //         if (responseProdDetails.ProductDetailList != null)
+    //         {
+    //             foreach (var proddetails in responseProdDetails.ProductDetailList)
+    //             {
+    //                 var productdetailsList_ = new ProductDetailsModel
+    //                     {
+    //                         ChannelNum = proddetails.ChannelNumber,
+    //                         SocketId = proddetails.SocketID,
+    //                         TIUName = proddetails.IUNetName,
+    //                         MUName = proddetails.MUNetName,
+    //                         Connector = proddetails.ConnectorID,
+    //                     };
+    //                 productDetailsList.Add(productdetailsList_);
+    //             }
+    //         }
+    //         else
+    //         {
+    //             errorMessage = "Failed to fetch data Product Details of selected row.";
+    //         }
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         errorMessage = $"An error occurred: {ex.Message}";
+    //     }
+    // }
+}

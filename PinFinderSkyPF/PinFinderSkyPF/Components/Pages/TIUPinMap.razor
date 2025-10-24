@@ -1,0 +1,698 @@
+﻿@page "/tiupinmap"
+@using MudBlazor
+@using PinFinderSkyPF
+@* @using PinFinderSkyPF.Client.Services *@
+@using System.Text
+@using System.Collections.Generic;
+@using static System.Runtime.InteropServices.JavaScript.JSType
+@using System.Net.Http.Json
+@using System.Text.Json
+@using static System.Net.WebRequestMethods
+@using System.Threading.Tasks;
+@* @inject HttpClient Http *@
+@inject IItuffQueryController ItuffController;
+
+
+<MudText Typo="Typo.h6" GutterBottom="true">TIU Pin Map</MudText>
+
+@* TIU Schematic and Socket ID *@
+<MudGrid Spacing="0" Class="ma-1 pa-2 d-flex flex-row flex-wrap align-center">
+    <MudItem xs="6" md="3">
+        <MudText Label="Socket File" Class="ma-1 pa-2" Align="Align.Left">TIU Schematic and Socket:</MudText>
+    </MudItem>
+    <MudItem xs="6" md="3">
+        <MudTextField @bind-Value="readTIUSocket.TIUSchematicSocket" Label="" ReadOnly="true" Variant="Variant.Outlined" Class="custom-label ma-1 pa-2" />
+    </MudItem>
+</MudGrid>
+
+@* MudCarousel for SVG swiping *@
+@* <MudContainer Class="ma-1 pa-2">
+    <MudGrid Spacing="0" Class="ma-1 pa-2 d-flex flex-row flex-wrap align-center">
+        <MudItem xs="6" md="3">
+            <MudText Label="Socket File" Class="ma-1 pa-2" Align="Align.Left">Pin Map Image 1:</MudText>
+        </MudItem>
+    </MudGrid>
+    <MudText Label="PinMap" Class="ma-1 pa-2" Align="Align.Left">Pin Map Image:</MudText>
+    <MudCarousel Class="mud-width-full mx-4 my-4 rounded justify-center" @ref="_carousel" ItemsSource="@_source" Style="height:500px; color:inherit;" ShowArrows="@_arrows" ShowBullets="@_bullets" EnableSwipeGesture="@_enableSwipeGesture" AutoCycle="false">
+        <ItemTemplate>
+            <div style=" border: thin solid grey; width: 910px; height: 410px; padding: 10px ;  display: flex; justify-items: center; align-items: center; margin: auto; ">
+                <WheelZoom Image="@svgImagePath" width="900" height="400" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+            </div>
+        </ItemTemplate>
+    </MudCarousel>
+</MudContainer> *@
+
+@* Aggregate Table *@
+@* <MudTable Fixed="true" T="AggregateFailData" Items="pinMapdata" FixedHeader="true" FixedFooter="true" Hover="true" SortLabel="Sort By" Class="mt-4 relative">
+    <HeaderContent>
+        <MudTh>Count</MudTh>
+        <MudTh>Channel</MudTh>
+        <MudTh>Pin</MudTh>
+        <MudTh>Position</MudTh>
+    </HeaderContent>
+    <RowTemplate Context="context">
+        <MudTd DataLabel="Count">@context.Count</MudTd>
+        <MudTd DataLabel="Channel">@context.Channel</MudTd>
+        <MudTd DataLabel="Pin">@context.Pin</MudTd>
+        <MudTd DataLabel="Position">@context.Position</MudTd>
+    </RowTemplate>
+</MudTable> *@
+
+@* MudContainer has MudCarousel for SVG swiping & Aggregate Table *@
+<MudContainer Class="ma-1 pa-2">
+    <MudGrid Spacing="0" Class="ma-1 pa-2 d-flex flex-row flex-wrap align-center">
+        <MudItem xs="12" md="8">
+            <MudText Label="PinMap" Class="ma-1 pa-2" Align="Align.Left">Pin Map Image:</MudText>
+            <MudCarousel Class="mx-4 my-4 rounded justify-center" ItemsSource="@_source" Style="height:500px; width:contain; color:inherit;" ShowArrows="@_arrows" ShowBullets="@_bullets" EnableSwipeGesture="@_enableSwipeGesture" AutoCycle="false">
+                <ItemTemplate>
+                    <div style=" border: thin solid grey; width: 510px; height: 440px; padding: 10px ;  display: flex; justify-items: center; align-items: center; margin: auto; background-color: #FFFFFF; ">
+                        <WheelZoom Image="@svgImagePath" width="450" height="430" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+                    </div>
+                </ItemTemplate>
+            </MudCarousel>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            @* T="AggregateFailData" OnRowMouseEnter="ColourPinMap" Loading="isLoading" *@
+            <MudTable Fixed="true" Items="writeTable" FixedHeader="true" FixedFooter="true" Hover="true" SortLabel="Sort By" Class="mt-4 relative">
+                @* <HeaderContent>
+                <MudTh>Count</MudTh>
+                <MudTh>Channel</MudTh>
+                <MudTh>Pin</MudTh>
+                <MudTh>Position</MudTh>
+                </HeaderContent>
+                <RowTemplate Context="context">
+                <MudTd DataLabel="Count">@context.Count</MudTd>
+                <MudTd DataLabel="Channel">@context.Channel</MudTd>
+                <MudTd DataLabel="Pin">@context.Pin</MudTd>
+                <MudTd DataLabel="Position">@context.Position</MudTd>
+                </RowTemplate> *@
+                <HeaderContent>
+                    <MudTh>Name</MudTh>
+                    <MudTh>Age</MudTh>
+                    <MudTh>City</MudTh>
+                    <MudTh>Count</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Name">@context[0]</MudTd>
+                    <MudTd DataLabel="Age">@context[1]</MudTd>
+                    <MudTd DataLabel="City">@context[2]</MudTd>
+                    <MudTd DataLabel="Count">@context[7]</MudTd>
+                </RowTemplate>
+            </MudTable>
+
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@* Colour Indicator *@
+<MudContainer>
+    <div class="color-bar" style="display: flex;">
+        <div class="color-section" style="background-color: #074986; width: 60px; height: 15px; position: relative;">
+            <span style="color: white; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px;">1-3</span>
+        </div>
+        <div class="color-section" style="background-color: #3381FF; width: 60px; height: 15px; position: relative;">
+            <span style="color: black; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px;">4-6</span>
+        </div>
+        <div class="color-section" style="background-color: #00FF00; width: 60px; height: 15px; position: relative;">
+            <span style="color: black; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px;">7-9</span>
+        </div>
+        <div class="color-section" style="background-color: #FFC300; width: 60px; height: 15px; position: relative;">
+            <span style="color: black; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px;">10-12</span>
+        </div>
+        <div class="color-section" style="background-color: #FF9933; width: 60px; height: 15px; position: relative;">
+            <span style="color: black; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px;">13-15</span>
+        </div>
+        <div class="color-section" style="background-color: #FF5733; width: 60px; height: 15px; position: relative;">
+            <span style="color: white; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px;">16+</span>
+        </div>
+    </div>
+</MudContainer>
+
+<style>
+    /* Colour style for MudCarousel */
+    .carousel-container {
+        background-color: #f0f0f0;
+        padding: 16px;
+        border-radius: 8px;
+        height: fit-content;
+    }
+
+    .color-bar {
+        display: flex;
+        height: 20px; /* Adjust the height as needed */
+    }
+
+    .color-section {
+        flex: 1; /* Makes each section take up equal width */
+        height: 100%;
+    }
+
+    .custom-label {
+        font-size: 5.5rem; /* Adjust the font size as needed */
+    }
+
+</style>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <MudAlert Color="Color.Error" Severity="Severity.Error">@errorMessage</MudAlert>
+}
+
+
+@code {
+
+
+    //boolean uses at MudCarousel's to enable MudCarousel features (SVG IMage)
+    private bool _arrows = true;
+    private bool _bullets = true;
+    private bool _enableSwipeGesture = true;
+    private int selectedIndex = 2;
+    private bool isLoading = true;
+
+    public string errorMessage = string.Empty;
+    public string param1 = string.Empty;
+    public string param2 = string.Empty;
+
+
+    // Inject DataService from Homepage to use here in TiuPinMappage
+    // [Inject]
+    // public DataService DataService { get; set; }
+
+    // Lot and Operation parameter that will receive data from Homepage
+    protected override void OnInitialized()
+    {
+        // It should works to get these two input
+        //param1 = DataService.ParamLot;
+        //param2 = DataService.ParamOperation;
+    }
+
+    // Create object instance
+    private MudCarousel<string> _carousel;
+
+    // public TIUPinMap(MudCarousel<string> carousel)
+    // {
+    //     _carousel = carousel;
+    // }
+
+
+
+    //private PinMap data = new PinMap();
+
+    // List dataRow to receive the gRPC response
+    List<List<string>> dataRow = new List<List<string>>();
+    //private List<PinMap> dataRow = new List<PinMap>();
+
+    //private Dictionary<string> myDict = new Dictionary<string>();
+
+
+    public class PinMap
+    {
+        public PinMap()
+        {
+            UniqueFolderName = string.Empty;
+            Site = string.Empty;
+            testNameAccuracy = string.Empty;
+            Tuild = string.Empty;
+            Sum = string.Empty;
+            ProductN = string.Empty;
+            Ult = string.Empty;
+            VisualId = string.Empty;
+            Smrynam = string.Empty;
+            Tname = string.Empty;
+            Chan = string.Empty;
+            Connector = string.Empty;
+            PinName = string.Empty;
+            TiuPinName = string.Empty;
+
+        }
+
+        // Properties needed to hold data from gRPC response call
+        public string UniqueFolderName { get; set; }
+        public string Site { get; set; } // use for TIU Schematic Socket Name
+        public string testNameAccuracy { get; set; }
+        public string Tuild { get; set; } // use for TIU Schematic Socket Name
+        public string Sum { get; set; }
+        public string ProductN { get; set; }
+        public string Ult { get; set; }
+        public string VisualId { get; set; }
+        public string Smrynam { get; set; }
+        public string Tname { get; set; }
+        public string Chan { get; set; }
+        public string Connector { get; set; }
+        public string PinName { get; set; }
+        public string TiuPinName { get; set; }
+    }
+
+    private List<AggregateFailData> pinMapdata = new List<AggregateFailData>();
+
+    public class AggregateFailData
+    {
+        public AggregateFailData()
+        {
+            Count = 0;
+            Channel = string.Empty;
+            Pin = string.Empty;
+            Position = string.Empty;
+
+        }
+
+        public int Count { get; set; }
+        public string Channel { get; set; }
+        public string Pin { get; set; }
+        public string Position { get; set; }
+
+    }
+
+    //public List<string> mapdata = new List<string>();
+    List<List<string>> mapdata = new List<List<string>>();
+
+    // public class writeTable
+    // {
+    //     public writeTable()
+    //     {
+    //         Name = string.Empty;
+    //         Age = string.Empty;
+    //         City = string.Empty;
+    //         Count = string.Empty;
+
+    //     }
+
+    //     public string Name { get; set; }
+    //     public string Age { get; set; }
+    //     public string City { get; set; }
+    //     public string Count { get; set; }
+
+    // }
+
+    // public class gRPCRequest
+    // {
+
+    //     public gRPCRequest()
+    //     {
+    //         lotNumber = string.Empty;
+    //         operation = string.Empty;
+    //     }
+
+    //     // Properties needed to send data to gRPC call
+    //     [Parameter]
+    //     public string lotNumber { get; set; }
+    //     [Parameter]
+    //     public string operation { get; set; }
+    // }
+
+    // Create readTIUSocket object instance
+    private TIUSocket readTIUSocket = new TIUSocket();
+
+    // Create class of tiuschematicsocket - need to get from json data
+    public class TIUSocket()
+    {
+        public string TIUSchematicSocket { get; set; } = string.Empty;
+    }
+
+    private string svgImagePath = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await FetchDataAsync();
+        await GetSvgImagePath();
+        AggregateTableCount();
+
+    }
+
+    // Function to get response from gRPC into List dataRow
+    public async Task FetchDataAsync()
+    {
+        await Task.Run(() =>
+        {
+            try
+            {
+                // var request = new PinMapDataRequest
+                // {
+                //     //string LotNumber = param1,
+                //     //string Operation = param2
+                // };
+
+                // var response = await GrpcClient.GetPinMapDataMethod(request);
+                // dataRow.Add(response);
+
+                // if (!string.IsNullOrEmpty(response)) // If response not null, pass dataRow to AggregateTableCount method
+                // {
+                //     errorMessage = string.Empty;
+                //     AggregateTableCount(dataRow);
+                // }
+                // else
+                // {
+                //     errorMessage = "gRPC response data failed to fetch";
+                //     dataRow.Clear(); // Make sure clear the existance data
+                // }
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"An error occurred: {ex.Message}";
+            }
+        });
+    }
+
+    // readTable to have data from gRPC response
+    // Creating a list of lists to represent a table
+    private List<List<string>> readTable = new List<List<string>>
+    {
+        new List<string> { "site", "tiuid", "sum", "fbin", "visualid", "connector", "pinname" },
+        new List<string> { "11", "SPRXCC1XT3352", "1A", "1501", "44CC337400202", ";;DH42", "DDR7_CLK_DN[0]" },
+        new List<string> { "11", "SPRXCC1XT3352", "1A", "1501", "44CC337400202", ";;DH42", "DDR7_CLK_DN[0]" },
+        new List<string> { "11", "SPRXCC1XT3352", "1A", "1501", "44CC337400202", ";;DH42", "DDR7_CLK_DN[0]" },
+        new List<string> { "11", "SPRXCC1XT3357", "1A", "1501", "44CC337400207", ";;DH42", "DDR7_CLK_DN[0]" },
+        new List<string> { "11", "SPRXCC1XT3357", "1A", "1501", "44CC337400272", ";;AA34", "DDR7_CLK_DN[0]" },
+        new List<string> { "11", "SPRXCC1XT3352", "1A", "1501", "44CC337400202", ";;DH42", "DDR7_CLK_DN[0]" },
+        new List<string> { "11", "SPRXCC1XT3357", "1A", "1501", "44CC337400207", ";;AA34", "DDR7_CLK_DN[0]" },
+        new List<string> { "11", "SPRXCC1XT3352", "1A", "1501", "44CC337400202", ";;DH42", "DDR7_CLK_DN[0]" },
+        new List<string> { "11", "SPRXCC1XT3352", "1A", "1501", "44CC337400202", ";;DH42", "DDR7_CLK_DN[0]" },
+        new List<string> { "11", "SPRXCC1XT3352", "1A", "1501", "44CC337400202", ";;DH42", "DDR7_CLK_DN[0]" },
+        new List<string> { "11", "SPRXCC1XT3352", "1A", "1501", "44CC337400202", ";;DH42", "DDR7_CLK_DN[0]" },
+    };
+
+    // writeTable to extract data from readTable once conditions & count done
+    // Creating a list of lists to represent a table
+    private List<List<string>> writeTable = new List<List<string>>();
+    public IList<string> _source = new List<string>(); // Source list for MudCarousel
+
+    int count = 0;
+
+    // Function to check dataRow List and do counting and row extraction into writeTable
+    private void AggregateTableCount() //aggregatetablecount must receive data from dataTable gRPC response
+    {
+        // Dictionary to keep track of row counts based on specific columns
+        Dictionary<string, int> rowCounts = new Dictionary<string, int>();
+
+        // Specify which columns to check for it's same data in rows
+        int[] columnsToCheck = { 1, 4 }; // "site","tiuid","sum","fbin","visualid","connector" columns (need to change again pnce finalize the structure)
+                                         //int[] columnsToCheck2 = { 0, 1 }; // "site","tiuid"
+
+
+
+        // Iterate through readTable to count occurrences of each row based on specific columns that have same
+        foreach (var row in readTable.Skip(1))
+        {
+            // Create a string representation of the row based on specific columns for easy comparison
+            string rowKey = string.Join(",", columnsToCheck.Select(index => row[index]));
+            //string rowKey2 = string.Join(",", columnsToCheck2.Select(index => row[index]));
+
+            if (rowCounts.ContainsKey(rowKey))
+            {
+                rowCounts[rowKey]++;
+                count++;
+            }
+            else
+            {
+                rowCounts[rowKey] = 1;
+            }
+        }
+
+        // Set to keep track of added row keys to ensure only one row instance is added to writeTable
+        HashSet<string> addedRowKeys = new HashSet<string>();
+
+        // Iterate through the list again to transfer unique rows with duplicates to writeTable
+        foreach (var row in readTable.Skip(1)) // Skip header row
+        {
+            string rowKey = string.Join(",", columnsToCheck.Select(index => row[index]));
+
+            if (!addedRowKeys.Contains(rowKey))
+            {
+                // Create a new row with the count appended as the final column
+                List<string> newRow = new List<string>(row);
+                newRow.Add(rowCounts[rowKey].ToString());
+
+                // Add the new row to writeTable
+                writeTable.Add(newRow);
+
+                // Mark this row key as added
+                addedRowKeys.Add(rowKey);
+
+                // Add the unique combination of "tiuid" and "site" to the _source list
+                _source.Add($"{row[0]}_{row[1]}");
+            }
+        }
+
+        //_source =
+
+        // Console.WriteLine(count);
+        // Console.WriteLine("Unique rows with duplicates based on specific columns + count column :");
+        // foreach (var row2 in writeTable)
+        // {
+        //     Console.WriteLine(string.Join(", ", row2));
+        // }
+
+        // ColourPinMap(writeTable);
+    }
+
+
+    // Function to count the failure and pass data into new List2 - // Cancel this method
+    private void AggregateTableCount2(List<PinMap> dataList)
+    {
+
+        var checkList = new List<PinMap>();
+        var trackingDict = new Dictionary<string, PinMap>();
+        var aggregateList = new List<AggregateFailData>();
+
+        if (dataList != null)
+        {
+
+            foreach (var row in dataList) // Iterate all rows in dataList
+            {
+                // Create a unique key based on the combination of fields to check
+                var key = $"{row.VisualId}-{row.Tuild}-{row.Connector}";
+                int count = 0;
+                if (trackingDict.TryGetValue(key, out var exist))
+                {
+                    // If the combination already exists, increment the count
+                    count++;
+                }
+                else
+                {
+                    // If it's a new combination, add it to the dictionary and list
+                    var newData = new AggregateFailData
+                        {
+                            Channel = row.Chan,
+                            Pin = row.PinName,
+                            Position = row.Connector,
+                            Count = 1
+                        };
+
+                    //trackingDict[key] = newData;
+                    aggregateList.Add(newData);
+                }
+
+                // Check against combinedList
+                // FirstOrDefault method searches for a matching element within the same List
+                //var existing = dataList.FirstOrDefault(cd => cd.PinName == row.PinName && cd.Connector == row.Connector);
+            }
+        }
+        else
+        {
+            errorMessage = "Aggregate Table Count failed as list empty";
+        }
+        //return aggregateList;
+
+    }
+
+    // Function getting the SVG path locally. - stick to this first temporary as Amir mentioned drawing svg function is not easy to implement
+    // my plan to call it from folder first
+    private async Task GetSvgImagePath()
+    {
+        errorMessage = string.Empty;
+
+        // Replace with our actual API link for svg
+        var apiUrl = "/Y8_GNR_GNRAP/1_1696105720642539.svg";
+
+        // method need to change to response of uniqueFolder from gRPC can enable us pick to the folder
+        try
+        {
+            var response = await Http.GetAsync(apiUrl);
+            if (response.IsSuccessStatusCode)
+            {
+                var svgData = await response.Content.ReadAsStringAsync();
+                svgImagePath = svgData; //ConvertSvgToBase64(svgData);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching SVG: {ex.Message}");
+        }
+    }
+
+    // Thinking on neccesary to convert?
+    private string ConvertSvgToBase64(string svgData)
+    {
+        var plainTextBytes = Encoding.UTF8.GetBytes(svgData);
+        return "data:image/svg+xml;base64," + Convert.ToBase64String(plainTextBytes);
+    }
+
+    // private List<string> summaries = new List<string>();
+
+    private string currentlyHoveredElement;
+
+    private void ColourPinMap(TableRowHoverEventArgs<AggregateFailData> tableRowHoverEventArgs)
+    {
+        // Need to do the color
+        currentlyHoveredElement = tableRowHoverEventArgs.Item.Pin;
+    }
+
+    // public Dictionary<string, List<string>> GetHighAccuracyBinPartHash()
+    // {
+    //     var traceBinPartHash = new Dictionary<string, List<string>>();
+    //     var partialTraceBinPartHash = new Dictionary<string, List<string>>();
+
+    //     // Deserialize the JSON string into a dictionary
+    //     var pinMapData = JsonSerializer.Deserialize<List<AggregateFailData>>(jsonData);
+    //     string jsonString = JsonSerializer.Serialize(pinMapData);
+
+    //     foreach (var bin in jsonData)
+    //     {
+    //         var traceContentArray = new List<string>(); // Store the list of parts that have complete data for trace
+    //         var partialContentArray = new List<string>(); // Store the list of parts that have partial trace data for the bin
+
+    //         foreach (var part in bin.Value)
+    //         {
+    //             foreach (var content in part.Value)
+    //             {
+    //                 foreach (var item in content.Value.UnitData)
+    //                 {
+    //                     string testNameAccuracy = content.Value.UnitHeader.ContainsKey("testNameAccuracy") ? content.Value.UnitHeader["testNameAccuracy"] : "N/A";
+
+    //                     if (testNameAccuracy == "Low")
+    //                     {
+    //                         continue;
+    //                     }
+
+    //                     foreach (var tname in item.Value)
+    //                     {
+    //                         foreach (var listFailItem in tname.Value)
+    //                         {
+    //                             var channel = listFailItem.Value.CHAN;
+    //                             var measure = listFailItem.Value.MEASURE;
+    //                             var pinName = listFailItem.Value.PinName;
+    //                             var pkg = listFailItem.Value.Connector;
+    //                             var tiuPinNames = listFailItem.Value.TiuPinName;
+    //                             var die = listFailItem.Value.Die;
+
+    //                             if (!string.IsNullOrEmpty(channel) || !string.IsNullOrEmpty(measure) || !string.IsNullOrEmpty(pinName) || !string.IsNullOrEmpty(pkg) || !string.IsNullOrEmpty(tiuPinNames))
+    //                             {
+    //                                 if (!traceContentArray.Contains(content.Key))
+    //                                 {
+    //                                     traceContentArray.Add(content.Key);
+    //                                 }
+    //                                 continue;
+    //                             }
+
+    //                             if (string.IsNullOrEmpty(channel) && string.IsNullOrEmpty(measure) && string.IsNullOrEmpty(pinName) && string.IsNullOrEmpty(pkg) && string.IsNullOrEmpty(tiuPinNames))
+    //                             {
+    //                                 if (!partialContentArray.Contains(content.Key))
+    //                                 {
+    //                                     partialContentArray.Add(content.Key);
+    //                                 }
+    //                                 continue;
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+
+    //         traceBinPartHash[bin.Key] = traceContentArray;
+    //         partialTraceBinPartHash[bin.Key] = new List<string>();
+
+    //         foreach (var content in partialContentArray)
+    //         {
+    //             if (!traceContentArray.Contains(content))
+    //             {
+    //                 partialTraceBinPartHash[bin.Key].Add(content);
+    //             }
+    //         }
+    //     }
+
+    //     return traceBinPartHash;
+    // }
+}
+
+    @* //     private List<ProductClassTestModel> productList = new List<ProductClassTestModel>
+    //     JsonSerializer.Deserialize<List<ProductClassTestModel>>(jsonData
+    //     JsonData data2 = JsonSerializer.Deserialize<JsonData>(jsonData2);
+    //     Console.WriteLine("Deserialized Data:");
+
+    //     //JsonData data = JsonSerializer.Deserialize<JsonData>(jsonData);
+    //     Dictionary<string, List<string>> traceBinPartHash = new Dictionary<string, List<string>>();
+    //     Dictionary<string, List<string>> partialTraceBinPartHash = new Dictionary<string, List<string>>();
+
+    //     GetHighAccuracyBinPartHash(data, traceBinPartHash, partialTraceBinPartHash);
+
+    //     Console.WriteLine("traceBinPartHash:");
+    //     foreach (var kvp in traceBinPartHash)
+    //     {
+    //         Console.WriteLine($"{kvp.Key}: {string.Join(", ", kvp.Value)}");
+    //     }
+
+    //     Console.WriteLine("\npartialTraceBinPartHash:");
+    //     foreach (var kvp in partialTraceBinPartHash)
+    //     {
+    //         Console.WriteLine($"{kvp.Key}: {string.Join(", ", kvp.Value)}");
+    //     }
+    // }
+
+    // public static void GetHighAccuracyBinPartHash(JsonData jsonData, Dictionary<string, List<string>> traceBinPartHash, Dictionary<string, List<string>> partialTraceBinPartHash)
+    // {
+    //     foreach (var bin in jsonData.bin)
+    //     {
+    //         List<string> traceContentArray = new List<string>();
+    //         List<string> partialContentArray = new List<string>();
+
+    //         foreach (var part in bin.Value.part)
+    //         {
+    //             foreach (var content in part.Value.content)
+    //             {
+    //                 string testNameAccuracy = content.Value.unitHeader?.testNameAccuracy ?? "N/A";
+    //                 if (testNameAccuracy == "Low") continue;
+
+    //                 foreach (var unitData in content.Value.unitData)
+    //                 {
+    //                     foreach (var item in unitData.Value.Data)
+    //                     {
+    //                         foreach (var dataItem in item.Value)
+    //                         {
+    //                             if (dataItem.CHAN != "" || dataItem.MEASURE != "" || dataItem.PinName != "" || dataItem.Connector != "" || dataItem.TiuPinName != "")
+    //                             {
+    //                                 if (!traceContentArray.Contains(content.Key))
+    //                                 {
+    //                                     traceContentArray.Add(content.Key);
+    //                                 }
+    //                                 continue;
+    //                             }
+
+    //                             if (dataItem.CHAN == "" && dataItem.MEASURE == "" && dataItem.PinName == "" && dataItem.Connector == "" && dataItem.TiuPinName == "")
+    //                             {
+    //                                 if (!partialContentArray.Contains(content.Key))
+    //                                 {
+    //                                     partialContentArray.Add(content.Key);
+    //                                 }
+    //                                 continue;
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+
+    //         traceBinPartHash[bin.Key] = traceContentArray;
+    //         partialTraceBinPartHash[bin.Key] = new List<string>();
+    //         foreach (var content in partialContentArray)
+    //         {
+    //             if (!traceContentArray.Contains(content))
+    //             {
+    //                 partialTraceBinPartHash[bin.Key].Add(content);
+    //             }
+    //         }
+    //     }
+    // } *@
+
+
+
+}

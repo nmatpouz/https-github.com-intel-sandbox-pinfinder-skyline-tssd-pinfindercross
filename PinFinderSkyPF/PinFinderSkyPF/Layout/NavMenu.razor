@@ -1,0 +1,24 @@
+﻿
+<MudNavMenu>
+    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+    <MudNavLink Href="/tiupinmap" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.DeveloperBoard">TIU Map</MudNavLink>
+    <MudNavLink Href="/postprocessing" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.PostAdd">Post Processing</MudNavLink>
+    <MudNavLink Href="/testpage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.PostAdd">Testing Page</MudNavLink>
+    @* <MudNavLink Href="counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">Counter</MudNavLink>
+    <MudNavLink Href="weather" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AddCard">Weather</MudNavLink> *@
+    <MudNavGroup Title="Supported Product" Icon="@Icons.Material.Filled.Info" Expanded="false">
+        <MudNavLink Href="/classtest" Target="_blank" Icon="fas fa-users" IconColor="Color.Success">Class Test</MudNavLink>
+        <MudNavLink Href="/burnin" Target="_blank" Icon="fas fa-user-shield" IconColor="Color.Info">Burn In</MudNavLink>
+        <MudNavLink Href="/lookuptable" Target="_blank" Icon="fas fa-user-shield" IconColor="Color.Info">Look-Up Table</MudNavLink>
+    </MudNavGroup>
+    <MudNavGroup Title="Support" Icon="@Icons.Material.Filled.SupportAgent" Expanded="false">
+        <MudNavLink Href="https://dev.azure.com/ATTD/STTD_PinFinder/_workitems/recentlyupdated/" Target="_blank" Icon="fas fa-users" IconColor="Color.Success">Submit Ticket</MudNavLink>
+        <MudNavLink Href="https://dev.azure.com/ATTD/STTD_PinFinder/_workitems/recentlycreated/" Target="_blank" Icon="fas fa-user-shield" IconColor="Color.Info">New Product</MudNavLink>
+        <MudNavLink Href="mailto:pinfinder_support@intel.com?subject=Mail%20from%20PinFinder%20Website&body=Dear%20PinFinder%20Team" Icon="fas fa-user-shield" IconColor="Color.Info">Email</MudNavLink>
+    </MudNavGroup>
+    <MudNavGroup Title="Help" Icon="@Icons.Material.Filled.Help" Expanded="false">
+        <MudNavLink Href="/pinfinderspec" Icon="fas fa-users" IconColor="Color.Success">PinFinder Spec</MudNavLink>
+    </MudNavGroup>
+</MudNavMenu>
+
+

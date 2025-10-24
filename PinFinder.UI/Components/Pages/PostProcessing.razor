@@ -1,0 +1,340 @@
+﻿@page "/postprocessing"
+@namespace PinFinder.UI.Pages
+@using MudBlazor
+@using PinFinder.Core.Controllers
+@using PinFinder.Core.Domain.Commands.Replies
+@using PinFinder.UI
+@using DrawingColor = System.Drawing.Color
+@using System.Drawing
+@using static MudBlazor.CategoryTypes
+@using System.ComponentModel.DataAnnotations
+@using System.Text.Json
+@using System.Collections.Generic
+@inject IJSRuntime JS
+@inject HttpClient Http
+@inject IItuffQueryController ItuffController;
+@inject PostProcessingQueryController PostProcessingController
+
+<MudGrid Spacing="5" >
+    <MudItem Class="" md="12">
+        <MudAlert Severity="Severity.Info" Variant="Variant.Filled" Color="Color.Primary">
+            Post-Processing only available for the configured products. Please get Pinfinder Support via Pinfinder Azure DevOps using the
+            <a href="https://dev.azure.com/ATTD/STTD_PinFinder/_workitems/recentlyupdated/" target="_blank" style="color: #FFFFFF; text-decoration: underline;">Feature Work Item submission here</a>
+            if user wants the Post-Processing enable for that particular product.
+        </MudAlert>
+        @* <MudAlert Severity="Severity.Info">Post Processing only available for the configured products. Get Pinfinder Support via Pinfinder TFS using the 'Submit Ticket' below if you need to setup Post Processing for that particular product</MudAlert> *@
+        <MudSpacer />
+        @* <MudAlert Severity="Severity.Info" Variant="Variant.Filled" Dense="true">
+            Post-Processing only available for the configured products. Please get Pinfinder Support via Pinfinder Azure DevOps using the
+            <a href="https://dev.azure.com/ATTD/STTD_PinFinder/_workitems/recentlyupdated/" target="_blank" style="color: #FFFFFF; text-decoration: underline;">Feature Work Item submission here</a>
+            if user wants the Post-Processing enable for that particular product.
+        </MudAlert> *@
+    </MudItem>
+    <MudItem Class="" md="12">
+        <MudExpansionPanels Class="z-30 mb-4">
+            <MudExpansionPanel Text="Filter" @bind-IsExpanded="@isExpanded">
+                <TitleContent>
+                    <MudText>Post Processing Query</MudText>
+                </TitleContent>
+                <ChildContent>
+                    <MudGrid Spacing="2" Model="filterForm" Class="">
+                        <MudItem xs="12" md="4" Class="">
+                            <MudTextField @bind-Value="filterForm.LotId" Label="Lot ID" Variant="Variant.Filled" For="@(() => filterForm.LotId)" />
+                        </MudItem>
+                        <MudItem xs="12" md="3" Class="">
+                            <MudTextField @bind-Value="filterForm.Operation" Label="Operation" Variant="Variant.Filled" For="@(() => filterForm.Operation)" Mask="@maskoperation" />
+                        </MudItem>
+                        <MudItem xs="12" md="4" Class="">
+                            <MudTextField @bind-Value="filterForm.SummaryName" Label="Summary Name" Variant="Variant.Filled" For="@(() => filterForm.SummaryName)" />
+                        </MudItem>
+                        <br />
+                        <br />
+                    </MudGrid>
+                    <div class="d-flex">
+                        <MudIconButton Icon="@Icons.Material.Filled.Search" OnClick="SearchPostProcessing" Disabled="@_processing" contextmenu="User" Color="MudBlazor.Color.Inherit">
+                            @if (_processing)
+                            {
+                                <MudProgressCircular Class="ms-n1" Indeterminate="true" />
+                                <MudText Class="ms-2">Processing</MudText>
+                            }
+                            else
+                            {
+                                <MudText>Please click Search Icon button again!</MudText>
+                            }
+                        </MudIconButton>
+                        <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="RefreshFilter" contextmenu="User" Color="MudBlazor.Color.Inherit" />
+                    </div>
+                </ChildContent>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
+    </MudItem>
+</MudGrid>
+
+
+
+@if (isLoading)
+{
+    <MudProgressLinear Indeterminate="true" Class="my-7" />
+}
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <MudAlert Severity="Severity.Error">@errorMessage</MudAlert>
+}
+
+@if (showResult)
+{
+    @* Way No. 2 to display the Header Data adapt from Home.razor but just got issue as well at Value column, maybe can amend in future, temporary fixed by disable HeaderContent tag  *@
+    <MudTable Fixed="true" T="HeaderData" Items="@headerdataList" Hover="true">
+        @*<HeaderContent>
+                <MudTh>Field</MudTh>
+                <MudTh>Value</MudTh>
+            </HeaderContent>*@
+        <RowTemplate>
+            @foreach (var headerData in headerdataList)
+            {
+                <MudTr>
+                    <MudTd DataLabel="Field">Program</MudTd>
+                    <MudTd DataLabel="Value">@context.Program</MudTd>
+                </MudTr>
+                <MudTr>
+                    <MudTd DataLabel="Field">Product</MudTd>
+                    <MudTd DataLabel="Value">@context.Product</MudTd>
+                </MudTr>
+                <MudTr>
+                    <MudTd DataLabel="Field">Package</MudTd>
+                    <MudTd DataLabel="Value">@context.Package</MudTd>
+                </MudTr>
+                <MudTr>
+                    <MudTd DataLabel="Field">Tester</MudTd>
+                    <MudTd DataLabel="Value">@context.Tester</MudTd>
+                </MudTr>
+                <MudTr>
+                    <MudTd DataLabel="Field">Temperature</MudTd>
+                    <MudTd DataLabel="Value">@context.Temperature</MudTd>
+                </MudTr>
+                <MudTr>
+                    <MudTd DataLabel="Field">TIU</MudTd>
+                    <MudTd DataLabel="Value">@context.TIU</MudTd>
+                </MudTr>
+                <MudTr>
+                    <MudTd DataLabel="Field">Socket File</MudTd>
+                    <MudTd DataLabel="Value">@context.SocketFile</MudTd>
+                </MudTr>
+                <MudTr>
+                    <MudTd DataLabel="Field">Stpl File</MudTd>
+                    <MudTd DataLabel="Value">@context.StplFile</MudTd>
+                </MudTr>
+                <MudTr>
+                    <MudTd DataLabel="Field">Env File</MudTd>
+                    <MudTd DataLabel="Value">@context.EnvFile</MudTd>
+                </MudTr>
+                <MudTr>
+                    <MudTd DataLabel="Field">Output Path</MudTd>
+                    <MudTd DataLabel="Value">@context.OutputPath</MudTd>
+                </MudTr>
+            }
+        </RowTemplate>
+    </MudTable>
+
+    <MudTable Fixed="true" T="PostProcessingData" Items="@postProcessingDataList" FixedHeader="true" FixedFooter="true" Hover="true" SortLabel="Sort By" Class="mt-4 relative">
+        <HeaderContent>
+            <MudTh>Unit</MudTh>
+            <MudTh>Test Name</MudTh>
+            <MudTh>Failing Pin</MudTh>
+            @* <MudTh>Output Path</MudTh> *@
+        </HeaderContent>
+        <RowTemplate Context="context">
+            <MudTd DataLabel="Unit">@context.Unit</MudTd>
+            <MudTd DataLabel="Test Name">@context.TestName</MudTd>
+            <MudTd DataLabel="Failing Pin">@context.FailingPin</MudTd>
+            @* <MudTd DataLabel="Output Path">@context.OutputPath</MudTd> *@
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager PageSizeOptions="new int[] { 10, 25, 50, 100, int.MaxValue }" />
+        </PagerContent>
+    </MudTable>
+}
+
+@code {
+    private bool _processing = false;
+    public bool isLoading = false;
+    private bool isExpanded = false;
+    private bool showResult = false;
+    public string errorMessage = string.Empty;
+    public IMask maskoperation = new RegexMask(@"^[1-9]\d{0,3}$");
+
+    private FilterForm filterForm = new FilterForm();
+
+    public class FilterForm
+    {
+        public string LotId { get; set; } = string.Empty;
+        public string Operation { get; set; } = string.Empty;
+        public string SummaryName { get; set; } = string.Empty;
+    }
+
+    public HeaderData headerData = new HeaderData()
+        {
+            Program = string.Empty,
+            Product = string.Empty,
+            Package = string.Empty,
+            // Step = = string.Empty,
+            Tester = string.Empty,
+            Temperature = string.Empty,
+            TIU = string.Empty,
+            SocketFile = string.Empty,
+            StplFile = string.Empty,
+            EnvFile = string.Empty,
+            // PinfinderTable = string.Empty,
+            // Warning = string.Empty,
+            OutputPath = string.Empty,
+        };
+
+    public List<HeaderData> headerdataList = new List<HeaderData> { };
+
+    public class HeaderData
+    {
+        public string Program { get; set; } = string.Empty;
+        public string Product { get; set; } = string.Empty;
+        public string Package { get; set; } = string.Empty;
+        // public string Step { get; set; } = string.Empty;
+        public string Tester { get; set; } = string.Empty;
+        public string Temperature { get; set; } = string.Empty;
+        public string TIU { get; set; } = string.Empty;
+        public string SocketFile { get; set; } = string.Empty;
+        public string StplFile { get; set; } = string.Empty;
+        public string EnvFile { get; set; } = string.Empty;
+        // public string PinfinderTable { get; set; } = string.Empty;
+        // public string Warning { get; set; } = string.Empty;
+        public string OutputPath { get; set; } = string.Empty;
+    }
+
+    private List<PostProcessingData> postProcessingDataList = new List<PostProcessingData>();
+
+    public class PostProcessingData
+    {
+        public string Unit { get; set; } = string.Empty;
+        public string TestName { get; set; } = string.Empty;
+        public string FailingPin { get; set; } = string.Empty;
+        public string OutputPath { get; set; } = string.Empty;
+    }
+
+    async Task SearchPostProcessing()
+    {
+        _processing = true;
+        await Task.Delay(500);
+
+        isLoading = true;
+        StateHasChanged();
+
+        string lotId = filterForm.LotId;
+        string operation = filterForm.Operation;
+        string summaryName = filterForm.SummaryName;
+        string uniquefname = string.Empty;
+
+        try
+        {
+            // Pass lotnumber, operation and summary to request and get reply for Header Data to be part of Header of Post Processing
+            var requestHeader = ItuffController.GetHeaderData(lotId, operation, summaryName);
+            if (requestHeader.Result?.HeaderList != null) // If response of request not null
+            {
+                foreach (var header in requestHeader.Result.HeaderList)
+                {
+                    var headerData_ = new HeaderData
+                        {
+                            Program = header.Prgnm,
+                            Product = header.Prdct,
+                            Package = header.Packg,
+                            //Step = header.
+                            Tester = header.TesterType,
+                            Temperature = header.Tempr,
+                            TIU = header.IuDesignId,
+                            SocketFile = header.Ldbid,
+                            StplFile = header.Stpl,
+                            EnvFile = header.Env,
+                            //headerData.PinfinderTable = header.
+                            //headerData.Warning = header.
+                            OutputPath = string.Empty, // Initialize Output path as empty first
+                        };
+                    headerdataList.Add(headerData_);
+                    //Console.Log(headerdataList); // Print Console.log
+                    //await JS.InvokeVoidAsync("console.log",headerdataList);
+
+
+                }
+                //PopulateTableData();
+                //showResult = true;
+
+                var headerResponse = ItuffController.GetHeaderData(lotId, operation, summaryName);
+                if (headerResponse.Result?.HeaderList != null)
+                {
+                    foreach (var header in headerResponse.Result.HeaderList)
+                    {
+                        uniquefname = header.UniqueFolderName;
+                    }
+
+                    // var uniqueFolderName = headerResponse.HeaderList.First().UniqueFolderName;
+
+                    var postProcessingResponse = await PostProcessingController.GetPostProcessingData(uniquefname, lotId, operation, summaryName);
+                    if (postProcessingResponse?.PostProcessingList != null)
+                    {
+                        postProcessingDataList = postProcessingResponse.PostProcessingList.Select(data => new PostProcessingData
+                            {
+                                Unit = data.Unit,
+                                TestName = data.TestName,
+                                FailingPin = data.FailingPin,
+                                OutputPath = data.OutputPath
+                            }).ToList();
+
+                        // Update the OutputPath in headerdataList to be send to MudTable Header Data
+                        foreach (var headerData in headerdataList)
+                        {
+                            headerData.OutputPath = postProcessingDataList.FirstOrDefault()?.OutputPath ?? string.Empty;
+                        }
+
+                        showResult = true;
+                    }
+                    else
+                    {
+                        errorMessage = "Failed to fetch post-processing data.";
+                        showResult = false;
+                    }
+                }
+                else
+                {
+                    errorMessage = "Failed to fetch unique folder name.";
+                    showResult = false;
+                }
+
+            }
+            else
+            {
+                errorMessage = "Your query data is not exist. Please check your input.";
+                showResult = false;
+                _processing = false;
+                isLoading = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred: {ex.Message}";
+            showResult = false;
+        }
+
+        _processing = false;
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private void RefreshFilter()
+    {
+        filterForm.LotId = string.Empty;
+        filterForm.Operation = string.Empty;
+        filterForm.SummaryName = string.Empty;
+
+        filterForm = new FilterForm();
+        postProcessingDataList.Clear();
+        showResult = false;
+        errorMessage = string.Empty;
+    }
+}

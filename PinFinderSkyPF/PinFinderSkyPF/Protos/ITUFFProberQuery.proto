@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+// Defines  Service
+service ProberQuery {
+
+// Defines call to get send request and get response
+  rpc GetPinFinderData (FilterQuery) returns (QueryResponse);
+}
+
+//
+// Unary call
+//
+
+// Defines request
+message QueryRequest {
+
+  //string Lot = ABC1234;
+  //string Operation = 6242;
+}
+
+// Defines response
+message QueryResponse {
+  // what data gRPC return from database?
+
+}

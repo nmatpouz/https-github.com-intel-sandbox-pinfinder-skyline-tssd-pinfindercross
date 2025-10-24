@@ -1,0 +1,64 @@
+﻿@page "/accessreadme"
+@namespace PinFinder.UI.Pages
+@using MudBlazor
+@using PinFinder.Core.Controllers
+@using PinFinder.Core.Domain.Commands.Replies
+@using PinFinder.UI
+@* @using DrawingColor = System.Drawing.Color *@
+@using System.Drawing
+@using static MudBlazor.CategoryTypes
+
+<MudText Typo="Typo.h6" GutterBottom="true">Access ReadMe</MudText>
+<MudText Class="mb-8">Welcome to PinFinder App, please read through below instructions to get the access either for Blue Badge or Green Badge.</MudText>
+<br />
+
+<MudGrid>
+    <MudItem xs="1">
+        <MudIcon Icon="@Icons.Material.Filled.Badge" Style="color: #2196F3;"  />
+    </MudItem>
+    <MudItem xs="11">
+        <MudText Typo="Typo.h6" GutterBottom="true">Blue Badge</MudText>
+    </MudItem>
+</MudGrid>
+<MudText Typo="Typo.body2">
+    (1) Please go to left Nav Menu at Help - AGS Access - Blue Badge. Click Blue Badge it will route user to AGS Access.<br />
+    (2) Select the most relevant factory site for yourself. Only request one site per user as it applies to all VF.<br />
+    (3) Note: Provide a clear justification why you need the access.<br />
+</MudText>
+<br />
+<MudGrid>
+    <MudItem xs="1">
+        <MudIcon Icon="@Icons.Material.Filled.Badge" Style="color: #4CAF50;" />
+    </MudItem>
+    <MudItem xs="11">
+        <MudText Typo="Typo.h6" GutterBottom="true">Green Badge</MudText>
+    </MudItem>
+</MudGrid>
+<MudText Typo="Typo.body2">
+    (1) Please go to left Nav Menu at Help - AGS Access - Green Badge. Click Green Badge it will route user to AGS Access.<br />
+    (2) Select role: <q>TMG AT CH Pinfinder Contingent Worker</q>.  This access covers all VF sites.<br />
+    (3) Note: Provide a clear justification why you need the access.<br />
+</MudText>
+
+@* <div class="denied_msg_container">
+	<div class="denied_msg" onclick="a()">
+		<h4>Access Guide:</h4>
+		<p>Note: Provide a clear justification why you need the access.</p>
+		<div style="outline:2px solid DimGray; padding: 15px; width:900px">
+			<h4 style="color:blue; text-shadow:-1px -1px 0 #FFFF, 1px -1px 0 #FFFF,-1px  1px 0 #FFFF,1px  1px 0 #FFFF;">Blue Badge:</h4>
+			<p>Please apply for the access Help - AGS Access - Blue Badge, then select the most relevant factory site for you. Only request one site per user as it applies to all VF.</p>
+			<p>This will give you <q>MARS/ARIES/OASYS</q> access for Assembly & Test. (Shows in your membership as TMGUSER_MAOATM).</p>
+			<h4 style="color:DarkGreen; text-shadow:-1px -1px 0 #FFFF, 1px -1px 0 #FFFF,-1px  1px 0 #FFFF,1px  1px 0 #FFFF;">Green Badge:</h4>
+			<p>Please apply for the access Help - AGS Access - Green Badge. Select role: <q>TMG AT CH Pinfinder Contingent Worker</q>.  This access covers all VF sites.</p>
+		</div>
+	</div>
+
+</div> *@
+
+
+
+
+
+@code {
+
+}

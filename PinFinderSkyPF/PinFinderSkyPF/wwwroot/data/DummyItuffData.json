@@ -1,0 +1,169 @@
+{
+    "Header": [
+        {
+            "stpl": "I:\\hdmxprogs\\SPARK\\Production\\Execution\\11903501\\407740015d86\\GNDHCXXB0H20D01QUAL\\POR_TP\\CLASS_GNRD_HCC\\SubTestPlan_CLASS_GNRD_HCC.stpl"
+        },
+        {
+            "soc": ""
+        },
+        {
+            "env": ""
+        },
+        {
+            "lotId": "P436204CR"
+        },
+        {
+            "packg": "24 -> 24"
+        },
+        {
+            "prgnm": "GNDHCXXB0H20D01QUAL"
+        },
+        {
+            "prdct": "4GNWJVB"
+        },
+        {
+            "testertype": "HDMX"
+        },
+        {
+            "sspec": "----"
+        },
+        {
+            "lcode": "5261"
+        },
+        {
+            "sysid": "PG12SHHX3016"
+        },
+        {
+            "tempr": "105"
+        },
+        {
+            "ldbid": "GNRDHCC12T0327:GNRDHCC12T0327"
+        },
+        {
+            "smrynam": "1A"
+        },
+        {
+            "prdctName": "244GNWJVB -> GNR HCC"
+        },
+        {
+            "uniqueFolderName": "24_GND_GNRDHCC"
+        },
+        {
+            "iudesignid": "630-0137R1"
+        },
+        {
+            "mudesignid": "M64846-001"
+        },
+        {
+            "overflow_flag": "None"
+        }
+    ],
+    "Misc": [
+        {
+            "additionalAccessGroup": ""
+        },
+        {
+            "additionalAccessGroupLink": ""
+        }
+    ],
+    "98": [
+        {
+            "3": {
+                "unitHeader": {
+                    "site": "11",
+                    "testNameAccuracy": "High",
+                    "eightdigitbin": "90989801",
+                    "start": "74444000",
+                    "tuiId": "GNRDHCC11T0397",
+                    "end": "89301325",
+                    "sum": "1A",
+                    "productNum": "3",
+                    "ult": "D401308A_800_-06_-01",
+                    "fbin": "9898",
+                    "visualId": "D4510MP500243"
+                },
+                "unitData": [
+                    {
+                        "SIO_BSCAN_IO::VOH_X_AMEAS_K_END_X_X_VMIN_X_GPIO_1P0_HVM_VOH_GPIO1P0_25_R_fc1": [
+                            {
+                                "Die": "--",
+                                "Connector": ";;AF26",
+                                "FailCycle": "--",
+                                "PinName": "TXT_PLTEN",
+                                "TiuPinName": "TXT_PLTEN",
+                                "MEASURE": "43.956299",
+                                "FailPattern": "--",
+                                "CHAN": "7080",
+                                "FailVector": "--"
+                            },
+                            {
+                                "Die": "--",
+                                "Connector": ";;AJ29",
+                                "FailCycle": "--",
+                                "PinName": "PECI",
+                                "TiuPinName": "PECI",
+                                "MEASURE": "43.839802",
+                                "FailPattern": "--",
+                                "CHAN": "2084",
+                                "FailVector": "--"
+                            },
+                            {
+                                "Die": "--",
+                                "Connector": ";;BK70",
+                                "FailCycle": "--",
+                                "PinName": "TIMED_GPIO_1",
+                                "TiuPinName": "TIMED_GPIO_1",
+                                "MEASURE": "44.615601",
+                                "FailPattern": "--",
+                                "CHAN": "10000",
+                                "FailVector": "--"
+                            },
+                            {
+                                "Die": "--",
+                                "Connector": ";;BM70",
+                                "FailCycle": "--",
+                                "PinName": "TIMED_GPIO_0",
+                                "TiuPinName": "TIMED_GPIO_0",
+                                "MEASURE": "43.7342",
+                                "FailPattern": "--",
+                                "CHAN": "10008",
+                                "FailVector": "--"
+                            }
+                        ]
+                    },
+                    {
+                        "SIO_BSCAN_CD::VOX_X_AMEAS_E_BEGIN_TAP_VNN_VMAX_X_VOLGPIO_VSIM_ORI_gnr_gio_vol_cdie_right_fc1": [
+                            {
+                                "Die": "--",
+                                "Connector": ";;DP92",
+                                "FailCycle": "--",
+                                "PinName": "CPU_SOC_SPARE1",
+                                "TiuPinName": "CPU_SOC_SPARE1",
+                                "MEASURE": "-2,831.530029",
+                                "FailPattern": "--",
+                                "CHAN": "4033",
+                                "FailVector": "--"
+                            }
+                        ]
+                    },
+                    {
+                        "SIO_BSCAN_CD::VOX_X_AMEAS_E_BEGIN_TAP_VNN_VMIN_X_VOLGPIO_VSIM_gnr_gio_vol_cdie_right_fc1": [
+                            {
+                                "Die": "--",
+                                "Connector": ";;DP92",
+                                "FailCycle": "--",
+                                "PinName": "CPU_SOC_SPARE1",
+                                "TiuPinName": "CPU_SOC_SPARE1",
+                                "MEASURE": "-3,089.100098",
+                                "FailPattern": "--",
+                                "CHAN": "4033",
+                                "FailVector": "--"
+                            }
+                        ]
+                    }
+                    
+                ]
+            }
+        }
+    ]
+}

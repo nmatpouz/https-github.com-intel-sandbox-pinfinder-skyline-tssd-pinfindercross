@@ -1,0 +1,864 @@
+﻿@page "/"
+@using MudBlazor
+@using PinFinderSkyPF
+@using DrawingColor = System.Drawing.Color
+@using System.Drawing
+@using static MudBlazor.CategoryTypes
+@using System.ComponentModel.DataAnnotations
+@using System.Net.Http.Json
+@using System.Text.Json
+@using System.Collections.Generic
+@* @inject GrpcService GrpcService *@
+@* @inject AppState AppState *@
+@inject HttpClient Http
+
+<MudExpansionPanels Class="z-30 mb-4">
+    <MudExpansionPanel Text="Filter" @bind-IsExpanded="@isExpanded">
+        <TitleContent>
+            <MudText>ITUFF Prober Query</MudText>
+        </TitleContent>
+        <ChildContent>
+            <MudGrid Spacing="2" Model="filterForm"  Class="">
+                @* <MudItem xs="6" md="3">
+                <MudTextField @bind-Value="filterForm.Product" Label="Product" Variant="Variant.Filled" /> gap-x-8 gap-y-4 d-inline-flex flex-row flex-auto, d-flex justify-center
+                </MudItem>
+                <MudItem xs="6" md="3">
+                    <MudSelect @bind-Value="filterForm.Tester" Label="Tester" Variant="Variant.Filled" AnchorOrigin="Origin.BottomCenter">
+                        <MudSelectItem Value="@("HDMT")">HDMT</MudSelectItem>
+                        <MudSelectItem Value="@("Other")">Other</MudSelectItem>
+                    </MudSelect>
+                </MudItem> *@
+                <MudItem xs="12" md="4" Class=""> @* OnBlur="ValidateLotNumberAndOperation" *@
+                    <MudTextField @bind-Value="filterForm.LotNumber" Label="Lot Number" Variant="Variant.Filled" Required="true" For="@(() => filterForm.LotNumber)" />
+                </MudItem>
+                <MudItem xs="12" md="3" Class=""> @* OnBlur="ValidateLotNumberAndOperation" *@
+                    <MudTextField @bind-Value="filterForm.Operation" Label="Operation" Variant="Variant.Filled" Required="true" For="@(() => filterForm.Operation)" Mask="@maskoperation"  />
+                </MudItem>
+                <MudItem xs="12" md="4" Class="">
+                    <MudSelect @bind-Value="filterForm.Summary" For="@(() => filterForm.Summary)" Label="Summary" Variant="Variant.Filled" Disabled="@summaryEnabled">
+                        @foreach (var summary in summaries)
+                        {
+                            <MudSelectItem Value="@summary">@summary</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <br/>
+                <br/>
+                @* OR
+                <MudItem xs="12" md="4" Class="">
+                    <MudTextField @bind-Value="filterForm.TIUID" Required="false" For="@(() => filterForm.TIUID)" Mask="@maskunitiu" Immediate="true" Label="TIU ID" Variant="Variant.Filled" />
+                </MudItem> *@
+                @* <MudItem xs="12" md="4" Class="">
+                    <MudSelect T="string" @bind-Value="filterForm.BinSelect" MultiSelection="true" Label="Bin" Variant="Variant.Filled" AnchorOrigin="Origin.BottomCenter">
+                        @foreach(var bin in binlist)
+                        {
+                            
+                            <MudSelectItem T="string" Value="@bin">@bin</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem> *@
+                @* <MudItem xs="12" md="4" Class="">
+                    <MudSelect @bind-Value="filterForm.Site" Required="true" For="@(() => filterForm.Site)" Label="Site" Variant="Variant.Filled" AnchorOrigin="Origin.BottomCenter">
+                        <MudSelectItem Value="@("ATD")">ATD</MudSelectItem>
+                        <MudSelectItem Value="@("KM")">KM</MudSelectItem>
+                        <MudSelectItem Value="@("PG")">PG</MudSelectItem>
+                        <MudSelectItem Value="@("SS")">SS</MudSelectItem>
+                        <MudSelectItem Value="@("CD")">CD</MudSelectItem>
+                        <MudSelectItem Value="@("CRTO")">CRTO</MudSelectItem>
+                        <MudSelectItem Value="@("KM8")">KM8</MudSelectItem>
+                        <MudSelectItem Value="@(" ")">None</MudSelectItem>
+                    </MudSelect>
+                </MudItem> *@
+            </MudGrid>
+            <div class="d-flex">
+                @* Disabled="@(!showResult)" *@
+                <MudIconButton Icon="@Icons.Material.Filled.Search" OnClick="SearchFilter" Disabled="@searchbuttonEnabled" contextmenu="User" Color="MudBlazor.Color.Inherit" />
+                <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="RefreshFilter" contextmenu="User" Color="MudBlazor.Color.Inherit" />
+                @* <MudIconButton Icon="@Icons.Material.Filled.Save" contextmenu="User" Color="MudBlazor.Color.Inherit" /> *@
+            </div>
+        </ChildContent>
+    </MudExpansionPanel>
+</MudExpansionPanels>
+
+
+@{
+    if (!string.IsNullOrEmpty(errorMessage))
+    {
+    <MudAlert Severity="Severity.Error">@errorMessage</MudAlert>
+    }
+}
+
+@{
+    if (showResult) {
+
+        <MudPaper Class="pa-4 mb-2">
+        <MudItem>
+            <MudText Class="mr-4">Program: @headerData.Program</MudText>
+        </MudItem>
+        <MudItem>
+            <MudText Class="mr-4">Product: @headerData.Product</MudText>
+        </MudItem>
+        <MudItem>
+            <MudText Class="mr-4">Package: @headerData.Package</MudText>
+        </MudItem>
+        <MudItem>
+            <MudText Class="mr-4">Step: @headerData.Step</MudText>
+        </MudItem>
+        <MudItem>
+            <MudText Class="mr-4">Tester: @headerData.Tester</MudText>
+        </MudItem>
+        <MudItem>
+            <MudText Class="mr-4">Temperature: @headerData.Temperature</MudText>
+        </MudItem>
+        <MudItem>
+            <MudText Class="mr-4">TIU: @headerData.TIU</MudText>
+        </MudItem>
+        <MudItem>
+            <MudText Class="mr-4">Socket File: @headerData.SocketFile</MudText>
+        </MudItem>
+        <MudItem>
+            <MudText Class="mr-4">Stpl File: @headerData.StplFile</MudText>
+        </MudItem>
+        <MudItem>
+            <MudText Class="mr-4">Env File: @headerData.EnvFile</MudText>
+        </MudItem>
+        <MudItem>
+            <MudText Class="mr-4">PinFinder Table: @headerData.PinfinderTable</MudText>
+        </MudItem>
+        <MudItem>
+            <MudText Class="mr-4">Warning: @headerData.Warning</MudText>
+        </MudItem>
+        </MudPaper>
+    }
+}
+
+@{
+    if (showResult) {
+    <MudTable Fixed="true" T="UnitDataContent" Items="@unitDataTable" FixedHeader="true" FixedFooter="true" Hover="true" SortLabel="Sort By" Class="mt-4 relative">
+        <HeaderContent>
+            <MudTh>Part</MudTh>
+            <MudTh>SUM</MudTh>
+            <MudTh>Visual ID</MudTh>
+            <MudTh>ULT</MudTh>
+            <MudTh>Unit TIU</MudTh>
+            <MudTh>Bin</MudTh>
+            <MudTh>ITUFF Socket</MudTh>
+            <MudTh>8 Digit Bin</MudTh>
+            <MudTh>Tester Channel</MudTh>
+            <MudTh>Measure</MudTh>
+            <MudTh>Name</MudTh>
+            <MudTh>Package</MudTh>
+            <MudTh>Test Name</MudTh>
+            <MudTh>Pattern</MudTh>
+            <MudTh>Vector</MudTh>
+            <MudTh>Cycle</MudTh>
+            <MudTh>TIU Name</MudTh>
+        </HeaderContent>
+        <RowTemplate Context="context">
+            <MudTd DataLabel="Part">@context.Part</MudTd>
+            <MudTd DataLabel="SUM">@context.Sum</MudTd>
+            <MudTd DataLabel="Visual ID">@context.VisualID</MudTd>
+            <MudTd DataLabel="ULT">@context.Ult</MudTd>
+            <MudTd DataLabel="Unit TIU">
+                <MudLink Href="/tiupinmap" Target="_blank" @onmouseover="@(() => ShowPopupCard(context))" @onmouseout="@(() => HidePopupCard())">@context.UnitTiu</MudLink>
+            </MudTd>
+            <MudTd DataLabel="Bin">@context.Bin</MudTd>
+            <MudTd DataLabel="ITUFF Socket">@context.ItuffSocket</MudTd>
+            <MudTd DataLabel="8 Digit Bin">@context.EightDigitBin</MudTd>
+            <MudTd DataLabel="Tester Channel">@context.TesterChannel</MudTd>
+            <MudTd DataLabel="Measure">@context.Measure</MudTd>
+            <MudTd DataLabel="Name">@context.Name</MudTd>
+            <MudTd DataLabel="Package">@context.Package</MudTd>
+            <MudTd DataLabel="Test Name">@context.TestName</MudTd>
+            <MudTd DataLabel="Pattern">@context.Pattern</MudTd>
+            <MudTd DataLabel="Vector">@context.Vector</MudTd>
+            <MudTd DataLabel="Cycle">@context.Cycle</MudTd>
+            <MudTd DataLabel="TIU Name">@context.TiuName</MudTd>
+        </RowTemplate>
+        <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 10, 25, 50, 100, int.MaxValue }" />
+        </PagerContent>
+
+        </MudTable>
+
+    }
+    else
+    {
+        // <MudProgressCircular Indeterminate="true" Color="MudBlazor.Color.Info" />
+    }
+}
+
+<MudOverlay @bind-Visible="@_isPopupVisible" Position="@(_popupPosition)" Offset="@(_popupOffset)">
+    <MudCard Elevation="5" Style="width: 300px;">
+        <MudCardHeader>
+            <MudText Typo="Typo.h6">@_popupElement.UnitTiu</MudText>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudText>Part: @_popupElement.Part</MudText>
+            <MudText>Visual ID: @_popupElement.VisualID</MudText>
+            <MudText>Bin: @_popupElement.Bin</MudText>
+            <MudText>ITUFF Socket: @_popupElement.ItuffSocket</MudText>
+            <MudText>8 Digit Bin: @_popupElement.EightDigitBin</MudText>
+            <MudText>Tester Channel: @_popupElement.TesterChannel</MudText>
+            <MudText>Measure: @_popupElement.Measure</MudText>
+            <MudText>Name: @_popupElement.Name</MudText>
+            <MudText>Package: @_popupElement.Package</MudText>
+            <MudText>Test Name: @_popupElement.TestName</MudText>
+            <MudText>Pattern: @_popupElement.Pattern</MudText>
+            <MudText>Vector: @_popupElement.Vector</MudText>
+            <MudText>Cycle: @_popupElement.Cycle</MudText>
+            <MudText>TIU Name: @_popupElement.TiuName</MudText>
+        </MudCardContent>
+    </MudCard>
+</MudOverlay>
+
+@* <MudElement HtmlTag="a"
+            Class="ms-1 justify-center align-content-center"
+            href="https://github.com/MudBlazor/MudBlazor"
+            target="blank"
+            rel="noopener noreferrer">
+    2024 PinFinder Support 
+</MudElement> *@
+
+@code {
+
+    private bool isExpanded = false;
+    private bool showResult = false;
+    private string errorMessage = string.Empty;
+    private bool summaryEnabled = false;
+    private bool searchbuttonEnabled = false;
+    private List<string> summaries = new List<string>();
+    public IMask maskoperation = new RegexMask(@"^[1-9]\d{0,3}$");
+    public IMask masktiu = new RegexMask(@"^\p{L}{0,29}$");
+    // public PatternMask masktiu = new PatternMask("XXXX%")
+    // {
+    //     MaskChars = new[] { new MaskChar('X', @"^[A-Z0-9]\p{L}|\d{3}|[A-Z0-9]\p{L}|\d{4})%$") },
+    //     Placeholder = '_', "^[A-Z0-9]\p{L}|\d{0,3}$"
+    //     CleanDelimiters = true,
+    //     Transformation = AllUpperCase,
+    // Validation = (value) =>
+    // {
+    //     if (value.Length == 4)
+    //     {
+    //         return true;
+    //     }
+    //     else if (value.Length == 3)
+    //     {
+    //         value += "%";
+    //         return true;
+    //     }
+    //     return false;
+    // }
+    // };
+
+    public PatternMask maskunitiu = new PatternMask("XXXXXXXXXXXX:XXXXXXXXXXXX")
+        {
+            MaskChars = new[] { new MaskChar('X', @"[0-9a-zA-Z]") },
+            Placeholder = '_',
+            CleanDelimiters = true,
+            Transformation = AllUpperCase
+        };
+
+    // transform lower-case chars into upper-case chars
+    private static char AllUpperCase(char c) => c.ToString().ToUpperInvariant()[0];
+
+
+
+    private string[] binlist =
+    {
+        "8", "9", "10", "11","12","13","15","16","19","22","25","27"
+    };
+
+    // Transform 4 digit char to Integer
+    //private static char AllStringCase(char c) => c.ToString();
+
+    // Filter Options expand
+    private void TogglePanel()
+    {
+        isExpanded = !isExpanded;
+    }
+
+    // Create filter object instance
+    private Filter filter = new Filter();
+
+    // Create class of Filter
+    public class Filter
+    {
+        public string Product { get; set; } = string.Empty;
+        public string Tester { get; set; } = string.Empty;
+        public string LotNumber { get; set; } = string.Empty;
+        public string Operation { get; set; } = string.Empty;
+        public string Summary { get; set; } = string.Empty;
+        public string TIUID { get; set; } = string.Empty;
+        public string Bin { get; set; } = string.Empty;
+        public string Site { get; set; } = string.Empty;
+    }
+
+
+    // Create filterOptions object instance
+    FilterForm filterForm = new FilterForm();
+
+    // Create class of FilterOptions
+    private class FilterForm
+    {
+
+        public string Product { get; set; } = string.Empty;
+
+        public string Tester { get; set; } = string.Empty;
+
+        [Required]
+        public string LotNumber { get; set; } = string.Empty;
+
+        [Required]
+        public string Operation { get; set; } = string.Empty;
+
+        [Required]
+        public string Summary { get; set; } = string.Empty;
+
+        // [Required]
+        public string TIUID { get; set; } = string.Empty;
+        public string BinSelect { get; set; } = string.Empty;
+
+        [Required]
+        public string Site { get; set; } = string.Empty;
+    }
+
+    private HeaderData headerData = new HeaderData()
+        {
+            Program = "Program1",
+            Product = "Product1",
+            Package = "Package1",
+            Step = "Step1",
+            Tester = "HDMT",
+            Temperature = "25°C",
+            TIU = "TIU1",
+            SocketFile = "SocketFile1",
+            StplFile = "StplFile1",
+            EnvFile = "EnvFile1",
+            PinfinderTable = "PinfinderTable1",
+            Warning = "Warning1"
+        };
+
+    public class HeaderData
+    {
+        public string Program { get; set; } = string.Empty;
+        public string Product { get; set; } = string.Empty;
+        public string Package { get; set; } = string.Empty;
+        public string Step { get; set; } = string.Empty;
+        public string Tester { get; set; } = string.Empty;
+        public string Temperature { get; set; } = string.Empty;
+        public string TIU { get; set; } = string.Empty;
+        public string SocketFile { get; set; } = string.Empty;
+        public string StplFile { get; set; } = string.Empty;
+        public string EnvFile { get; set; } = string.Empty;
+        public string PinfinderTable { get; set; } = string.Empty;
+        public string Warning { get; set; } = string.Empty;
+    }
+
+    private UnitDataContent unitData = new UnitDataContent();
+
+    public class UnitDataContent
+    {
+        public string Part { get; set; } = string.Empty;
+        public string Sum { get; set; } = string.Empty;
+        public string VisualID { get; set; } = string.Empty;
+        public string Ult { get; set; } = string.Empty;
+        public string UnitTiu { get; set; } = string.Empty;
+        public string Bin { get; set; } = string.Empty;
+        public string ItuffSocket { get; set; } = string.Empty;
+        public string EightDigitBin { get; set; } = string.Empty;
+        public string TesterChannel { get; set; } = string.Empty;
+        public string Measure { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Package { get; set; } = string.Empty;
+        public string TestName { get; set; } = string.Empty;
+        public string Pattern { get; set; } = string.Empty;
+        public string Vector { get; set; } = string.Empty;
+        public string Cycle { get; set; } = string.Empty;
+        public string TiuName { get; set; } = string.Empty;
+
+    }
+
+    private List<UnitDataContent> unitDataTable = new List<UnitDataContent>()
+    {
+        new UnitDataContent
+            {
+
+                Part = "1",
+                Sum = "1A",
+                VisualID = "44K84N0700813",
+                Ult = "",
+                UnitTiu = "SRFLCC10T0809",
+                Bin = "9804",
+                ItuffSocket = "11",
+                EightDigitBin = "90980453",
+                TesterChannel = "",
+                Measure = "",
+                Name = "SOC_SPARE[0]_DIE_B",
+                Package = "",
+                TestName = "SIO_BSCAN_COMP::BSCAN_X_AMEAS_E_END_TAP_VNN_VMIN_X_MEASURE",
+                Pattern = "",
+                Vector = "--",
+                Cycle = "--",
+                TiuName = ""
+            },
+            new UnitDataContent
+            {
+
+                Part = "1",
+                Sum = "1A",
+                VisualID = "44K84N0700813",
+                Ult = "",
+                UnitTiu = "SRFLCC10T0809",
+                Bin = "9804",
+                ItuffSocket = "11",
+                EightDigitBin = "90980453",
+                TesterChannel = "",
+                Measure = "",
+                Name = "SOC_SPARE[1]_DIE_B",
+                Package = ";;CK63",
+                TestName = "SIO_BSCAN_COMP::BSCAN_X_AMEAS_E_END_TAP_VNN_VMIN_X_MEASURE_RCOMP_IN_P_gnr_gio_voh_high_ux1_values_Com_Cdieright_50Ohms_fc1",
+                Pattern = "1",
+                Vector = "--",
+                Cycle = "--",
+                TiuName = "SOC_SPARE1_DIE_B"
+            },
+            new UnitDataContent
+            {
+
+                Part = "1",
+                Sum = "1A",
+                VisualID = "44K84N0700813",
+                Ult = "",
+                UnitTiu = "SRFLCC10T0809",
+                Bin = "9804",
+                ItuffSocket = "11",
+                EightDigitBin = "90980453",
+                TesterChannel = "",
+                Measure = "",
+                Name = "SOC_SPARE[2]_DIE_B",
+                Package = "",
+                TestName = "SIO_BSCAN_IO::TAP_X_CTVDEC_K_END_TAP_CFNPCIE_VMAX_X_EXTEST_AC",
+                Pattern = "1",
+                Vector = "--",
+                Cycle = "--",
+                TiuName = ""
+            },
+            new UnitDataContent
+            {
+
+                Part = "7",
+                Sum = "1A",
+                VisualID = "44K84N0702499",
+                Ult = "",
+                UnitTiu = "SRFLCC10T0809",
+                Bin = "5470",
+                ItuffSocket = "11",
+                EightDigitBin = "90547000",
+                TesterChannel = "10043",
+                Measure = "46.762199",
+                Name = "PE2_RX_DN[8]",
+                Package = "",
+                TestName = "SIO_PI5_IO::DFXRXDET_X_CTVDEC_E_END_X_CFNPCIE_VMIN_X_RXDET",
+                Pattern = "1",
+                Vector = "--",
+                Cycle = "--",
+                TiuName = ""
+            },
+            new UnitDataContent
+            {
+
+                Part = "7",
+                Sum = "1A",
+                VisualID = "44K84N0702499",
+                Ult = "",
+                UnitTiu = "SRFLCC10T0809",
+                Bin = "5470",
+                ItuffSocket = "11",
+                EightDigitBin = "90547000",
+                TesterChannel = "",
+                Measure = "",
+                Name = "PE2_TX_DP[L8]",
+                Package = "",
+                TestName = "SIO_PI5_IO::DFXRXDET_X_CTVDEC_E_END_X_CFNPCIE_VMIN_X_RXDET",
+                Pattern = "1",
+                Vector = "--",
+                Cycle = "--",
+                TiuName = ""
+            },
+            new UnitDataContent
+            {
+
+                Part = "7",
+                Sum = "1A",
+                VisualID = "44K84N0702499",
+                Ult = "",
+                UnitTiu = "SRFLCC10T0809",
+                Bin = "5470",
+                ItuffSocket = "11",
+                EightDigitBin = "90547000",
+                TesterChannel = "",
+                Measure = "",
+                Name = "PE2_TX_DN[L8]",
+                Package = "",
+                TestName = "SIO_PI5_IO::DFXRXDET_X_CTVDEC_E_END_X_CFNPCIE_VMIN_X_RXDET",
+                Pattern = "1",
+                Vector = "--",
+                Cycle = "--",
+                TiuName = ""
+            },
+            new UnitDataContent
+            {
+
+                Part = "7",
+                Sum = "1A",
+                VisualID = "44K84N0702499",
+                Ult = "",
+                UnitTiu = "SRFLCC10T0809",
+                Bin = "5470",
+                ItuffSocket = "11",
+                EightDigitBin = "90547000",
+                TesterChannel = "",
+                Measure = "",
+                Name = "PE2_RX_DP[L8]",
+                Package = "",
+                TestName = "SIO_PI5_IO::DFXRXDET_X_CTVDEC_K_END_X_CFNPCIE_VMIN_X_RXDET_REC",
+                Pattern = "1",
+                Vector = "--",
+                Cycle = "--",
+                TiuName = ""
+            },
+            new UnitDataContent
+            {
+
+                Part = "7",
+                Sum = "1A",
+                VisualID = "44K84N0702499",
+                Ult = "",
+                UnitTiu = "SRFLCC10T0809",
+                Bin = "5470",
+                ItuffSocket = "11",
+                EightDigitBin = "90547000",
+                TesterChannel = "10043",
+                Measure = "46.7444",
+                Name = "SOC_SPARE[1]_DIE_B",
+                Package = ";;CK63",
+                TestName = "SIO_BSCAN_IO::TAP_X_CTVDEC_K_END_TAP_CFNPCIE_VMAX_X_EXTEST_AC_fc",
+                Pattern = "1",
+                Vector = "--",
+                Cycle = "--",
+                TiuName = "SOC_SPARE1_DIE_B"
+            },
+            new UnitDataContent
+            {
+
+                Part = "7",
+                Sum = "1A",
+                VisualID = "44K84N0702499",
+                Ult = "",
+                UnitTiu = "SRFLCC10T0809",
+                Bin = "5470",
+                ItuffSocket = "11",
+                EightDigitBin = "90547000",
+                TesterChannel = "",
+                Measure = "",
+                Name = "TDO.PRIMARY.PE2.RX.8.FLEX1_PHY1.L0.PULSE.EVEN.DN:0b1",
+                Package = "",
+                TestName = "SIO_BSCAN_IO::TAP_X_CTVDEC_K_END_TAP_CFNPCIE_VMIN_X_EXTEST_AC_fc",
+                Pattern = "1",
+                Vector = "--",
+                Cycle = "--",
+                TiuName = ""
+            },
+            new UnitDataContent
+            {
+
+                Part = "7",
+                Sum = "1A",
+                VisualID = "44K84N0702499",
+                Ult = "",
+                UnitTiu = "SRFLCC10T0809",
+                Bin = "5470",
+                ItuffSocket = "11",
+                EightDigitBin = "90547000",
+                TesterChannel = "",
+                Measure = "",
+                Name = "PE2_RX_DN[8]",
+                Package = "",
+                TestName = "SIO_BSCAN_IO::TAP_X_CTVDEC_K_END_TAP_CFNPCIE_VMIN_X_EXTEST_AC",
+                Pattern = "1",
+                Vector = "--",
+                Cycle = "--",
+                TiuName = ""
+            },
+            new UnitDataContent
+            {
+
+                Part = "7",
+                Sum = "1A",
+                VisualID = "44K84N0702499",
+                Ult = "",
+                UnitTiu = "SRFLCC10T0809",
+                Bin = "5470",
+                ItuffSocket = "11",
+                EightDigitBin = "90547000",
+                TesterChannel = "",
+                Measure = "",
+                Name = "PE2_RX_DN[8]",
+                Package = "",
+                TestName = "SIO_BSCAN_IO::TAP_X_CTVDEC_K_END_TAP_CFNPCIE_VMIN_X_EXTEST_AC",
+                Pattern = "1",
+                Vector = "--",
+                Cycle = "--",
+                TiuName = ""
+            },
+            new UnitDataContent
+            {
+
+                Part = "7",
+                Sum = "1A",
+                VisualID = "44K84N0702499",
+                Ult = "",
+                UnitTiu = "SRFLCC10T0809",
+                Bin = "5470",
+                ItuffSocket = "11",
+                EightDigitBin = "90547000",
+                TesterChannel = "",
+                Measure = "",
+                Name = "PE2_RX_DN[8]",
+                Package = "",
+                TestName = "SIO_BSCAN_IO::TAP_X_CTVDEC_K_END_TAP_CFNPCIE_VMIN_X_EXTEST_AC",
+                Pattern = "1",
+                Vector = "--",
+                Cycle = "--",
+                TiuName = ""
+            },
+            new UnitDataContent
+            {
+
+                Part = "7",
+                Sum = "1A",
+                VisualID = "44K84N0702499",
+                Ult = "",
+                UnitTiu = "SRFLCC10T0809",
+                Bin = "5470",
+                ItuffSocket = "11",
+                EightDigitBin = "90547000",
+                TesterChannel = "",
+                Measure = "",
+                Name = "PE2_RX_DN[8]",
+                Package = "",
+                TestName = "SIO_BSCAN_IO::TAP_X_CTVDEC_K_END_TAP_CFNPCIE_VMIN_X_EXTEST_AC",
+                Pattern = "1",
+                Vector = "--",
+                Cycle = "--",
+                TiuName = ""
+            },
+            new UnitDataContent
+            {
+
+                Part = "7",
+                Sum = "1A",
+                VisualID = "44K84N0702499",
+                Ult = "",
+                UnitTiu = "SRFLCC10T0809",
+                Bin = "5470",
+                ItuffSocket = "11",
+                EightDigitBin = "90547000",
+                TesterChannel = "",
+                Measure = "",
+                Name = "PE2_RX_DN[8]",
+                Package = "",
+                TestName = "SIO_BSCAN_IO::TAP_X_CTVDEC_K_END_TAP_CFNPCIE_VMIN_X_EXTEST_AC",
+                Pattern = "1",
+                Vector = "--",
+                Cycle = "--",
+                TiuName = ""
+            }
+        };
+
+    // Function to check Lot & Operation existance
+    //private async Task ValidateLotNumberAndOperation() //enable this back when gRPC Client setup is ready
+    //{
+
+        // var request = new GetSummaryRequest // Request Lot and Operation to grpc service
+        // {
+        //     LotNumber = filterForm.LotNumber,
+        //     Operation = filterForm.Operation
+        // };
+
+        // var response = await GrpcClient.GetLotOperationMethod(request); // Response Lot and Operation existance from grpc service
+        // filter.LotNumber = response.LotNumber;
+        // filter.Operation = response.Operation;
+        //filter.Summary = response.SummaryName;
+        //errorMessage = response.Message;
+
+        // if (response != null)
+        // {
+        //     errorMessage = string.Empty;
+        //     if (!string.IsNullOrEmpty(filter.LotNumber) && !string.IsNullOrEmpty(filter.Operation))
+        //     {
+        //         if (filter.LotNumber == filterForm.LotNumber && filter.Operation == filterForm.Operation)
+        //         {
+        //             errorMessage = string.Empty;
+        //             ValidateSummary(response);
+        //         }
+        //         if (filter.LotNumber != filterForm.LotNumber && filter.Operation != filterForm.Operation)
+        //         {
+        //             errorMessage = "Incorrect Lot Number and Operation data fetch";
+        //             summaries.Clear(); // Make sure summaries do not hv any data
+        //             summaryEnabled = false;
+        //             showResult = false;
+        //         }
+        //         if (filter.LotNumber == filterForm.LotNumber && filter.Operation != filterForm.Operation)
+        //         {
+        //             errorMessage = "Lot Number is exist but Operation is incorrect. Unable to fetch the Summary";
+        //             summaries.Clear(); // Make sure summaries do not hv any data
+        //             summaryEnabled = false;
+        //             showResult = false;
+        //         }
+        //     }
+        //     else
+        //     {
+        //         errorMessage = "Lot Number and Operation not exist and failed to fetch";
+        //         summaries.Clear(); // Make sure summaries do not hv any data
+        //         summaryEnabled = false;
+        //         showResult = false;
+
+        //     }
+        // }
+        // StateHasChanged();
+   // }
+
+    // Function to fetch Summary if Lot & Operation exist
+    // private void ValidateSummary(GetResponse response) //enable this back when gRPC Client setup is ready
+    // {
+    //     errorMessage = string.Empty;
+    //     if(response.SummaryName != null)
+    //     {
+    //         if (response.LotNumber == filterForm.LotNumber && response.Operation == filterForm.Operation)
+    //         {
+    //             // Assign response value to the bind-Value of Summary at MudSelect component
+    //             filterForm.Summary = response.SummaryName;
+    //         }
+    //         if (response.LotNumber != filterForm.LotNumber && response.Operation == filterForm.Operation)
+    //         {
+    //             errorMessage = "Lot Number is incorrect. Unable to fetch the Summary";
+    //             summaries.Clear(); // Make sure summaries do not hv any data
+    //             summaryEnabled = false;
+    //             showResult = false;
+    //         }
+    //         if (response.LotNumber == filterForm.LotNumber && response.Operation != filterForm.Operation)
+    //         {
+    //             errorMessage = "Operation is incorrect. Unable to fetch the Summary";
+    //             summaries.Clear(); // Make sure summaries do not hv any data
+    //             summaryEnabled = false;
+    //             showResult = false;
+    //         }
+    //     }
+    //     else
+    //     {
+    //         errorMessage = "Summary failed to fetch";
+    //         summaries.Clear(); // Make sure summaries do not hv any data
+    //         summaryEnabled = false;
+    //         showResult = false;
+    //         searchbuttonEnabled = false;
+
+    //     }
+
+    // }
+
+    // Button Search
+    private void SearchFilter() 
+    {
+        // var request = new getheaderdatarequest // request header data to grpc service
+        // {
+        //     lotnumber = filterform.lotnumber,
+        //     operation = filterform.operation,
+        //     summary = filterform.summary,
+        //     tiuid = filterform.tiuid,
+        //     binselection = filterform.binselect,
+        //     site = filterform.site
+        // };
+
+        // var response = await grpcclient.getheadermethod(request); // response data of unit header from grpc service
+        // headerdata.program = response.program;
+        // headerdata.product = response.product;
+        // headerdata.package = response.package;
+        // headerdata.step = response.step;
+        // headerdata.tester = response.tester;
+        // headerdata.temperature = response.temperature;
+        // headerdata.tiu = response.tiu;
+        // headerdata.socketfile = response.socketfile;
+        // headerdata.stplfile = response.stplfile;
+        // headerdata.envfile = response.envfile;
+
+        // var request2 = new getunitdatarequest // request unit data to grpc service
+        // {
+        //     lotnumber = filterform.lotnumber,
+        //     operation = filterform.operation,
+        //     summary = filterform.summary,
+        //     tiuid = filterform.tiuid,
+        //     binselection = filterform.binselect,
+        //     site = filterform.site
+        // };
+
+        // //Response data of Unit Data from grpc service
+        // //Populate the response data into the List of MudTable model item
+        // unitDataTable = response.UnitDataItemsResponse.ToList();
+
+        Console.WriteLine("gRPC response of Header Data and Unit Data successful");
+        //Console.WriteLine($"Filter: Product input: {filter.Product}, Tester input: {filter.Tester}, Site input: {filter.Site}");
+
+        // Response data has assigned to the bind-Value of headerData and unitData list
+        showResult = true; // Allow display of MudPaper of Header Data and MudTable of Unit Data
+        StateHasChanged();
+
+    }
+
+    // Button Refresh - clear all
+    private void RefreshFilter()
+    {
+        Console.WriteLine("Refresh button clicked");
+
+        // Create new instance to clear previous filterForm properties
+        filterForm = new FilterForm(); 
+        filter = new Filter();
+        filterForm = new FilterForm();
+        headerData = new HeaderData();
+        unitData = new UnitDataContent();
+
+        // Hide display of MudPaper of Header Data and MudTable of Unit Data
+        showResult = false;
+
+        Console.WriteLine($"Filter: Product input: {filterForm.Product}, Tester input: {filterForm.Tester}, Site input: {filterForm.Site}");
+        errorMessage = string.Empty;
+        summaryEnabled = false;
+        summaries.Clear();
+    }
+
+    
+
+    private bool _isPopupVisible = false;
+    private UnitDataContent _popupElement = new UnitDataContent();
+    private System.Drawing.Point _popupPosition;
+    private int _popupOffset = 10;
+
+    private void ShowPopupCard(UnitDataContent element)
+    {
+        _popupElement = element;
+        _isPopupVisible = true;
+        _popupPosition = new System.Drawing.Point { X = 0, Y = 0 }; // Calculate the exact position based on the mouse position
+    }
+
+    private void HidePopupCard()
+    {
+        _isPopupVisible = false;
+    }
+
+    
+
+
+
+}
+
