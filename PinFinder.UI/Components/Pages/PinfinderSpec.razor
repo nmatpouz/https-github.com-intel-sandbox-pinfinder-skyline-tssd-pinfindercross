@@ -1,0 +1,401 @@
+﻿@page "/pinfinderspec"
+@using BootstrapBlazor.Components
+@using MudBlazor
+@using System.Text
+
+@* // Opening the PdfViewer - need to do research for MudBlazor support/not the PdfViewer *@
+<MudContainer Class="full-height">
+    <MudPaper Class="p-4 full-height">
+         @* <PdfViewer Width="100%" Height="600px" Class="mb-3 pdf-viewer-custom" Url="https://doclocator.intel.com/?ID=85679965C18245A1BB71066B38662F46&Dir=Objects&preview=1" OnDocumentLoaded="@OnDocumentLoaded" OnPageChanged="@OnPageChanged"></PdfViewer> *@
+        <iframe src="/PinFinderiTuffProberSpec.pdf" width="100%" height="1000px" class="mb-3 pdf-viewer-custom"></iframe>
+    </MudPaper>
+</MudContainer>
+
+<style>
+    .full-height {
+        height: 100%;
+    }
+    .pdf-viewer-custom {
+        height: 1000px; 
+    }
+    .pdf-viewer-custom button {
+        height: 1000px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 10px;
+        margin: 5px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+        .pdf-viewer-custom button:hover {
+            background-color: #0056b3;
+        }
+</style>
+
+@code {
+    // private string eventView { get; set; } = $"Last event: ..., CurrentPage: 0, TotalPages: 0";
+
+    // private void OnDocumentLoaded(PdfViewerEventArgs args)
+    //     => eventView = $"Last event: OnDocumentLoaded, CurrentPage: {args.CurrentPage}, TotalPages: {args.TotalPages}";
+
+    // private void OnPageChanged(PdfViewerEventArgs args)
+    //     => eventView = $"Last event: OnPageChanged, CurrentPage: {args.CurrentPage}, TotalPages: {args.TotalPages}";
+}
+
+@* // PinFinder Spec using MudText component *@
+@* <MudText Typo="Typo.h4">New PinFinder Classic Spec</MudText>
+
+<MudText Typo="Typo.h6">Release version 1.2.8</MudText>
+
+<MudText Typo="Typo.body1">User goes to pinfinder.intel.com web page</MudText>
+<MudText Typo="Typo.body1">If you select “iTUFF Prober”, it will go to the specific SITE that is selected</MudText>
+<MudText Typo="Typo.body1">User is able to select another Site in 2nd drop down menu</MudText>
+<MudText Typo="Typo.body1">User types in a Lot</MudText>
+<MudText Typo="Typo.body1">[site_ituffs] table is queried for that site to get all of the search paths for that site</MudText>
+<MudText Typo="Typo.body1">Paths are searched and Operation Pull down is populated</MudText>
+<MudText Typo="Typo.body1">User selects an Operation</MudText>
+<MudText Typo="Typo.body1">[site_ituffs] table is queried for that site to get all of the search paths for that site</MudText>
+<MudText Typo="Typo.body1">Summary file list Pull down is populated</MudText>
+<MudText Typo="Typo.body1">User select a Summary (MIDAS file is included in this list)</MudText>
+<MudText Typo="Typo.body1">User hits “Submit” (or happens right after a Summary is Chosen?)</MudText>
+<MudText Typo="Typo.body1">iTuff Parser starts</MudText>
+
+<MudText Typo="Typo.h6">iTuff tokens used for Lot / Part information:</MudText>
+<MudText Typo="Typo.body1">6_lotid_Lot ID</MudText>
+<MudText Typo="Typo.body1">6_prgnm_Test Program Name</MudText>
+<MudText Typo="Typo.body1">6_packg_Package</MudText>
+<MudText Typo="Typo.body1">6_prdct_Product</MudText>
+<MudText Typo="Typo.body1">6_testertype_Tester Type</MudText>
+<MudText Typo="Typo.body1">6_comnt_socfile_Socket File</MudText>
+<MudText Typo="Typo.body1">5_lcode_Location Code / Operation</MudText>
+<MudText Typo="Typo.body1">4_smrynam_Summary Name</MudText>
+<MudText Typo="Typo.body1">4_sysid_Tester Name</MudText>
+<MudText Typo="Typo.body1">4_tempr_Temperature</MudText>
+<MudText Typo="Typo.body1">4_ldbid_ / _tiuid_Tiu ID</MudText>
+<MudText Typo="Typo.body1">3_lsepUnit Separator</MudText>
+<MudText Typo="Typo.body1">3_prtnm_Part Number</MudText>
+<MudText Typo="Typo.body1">3_socket_Socket Number</MudText>
+<MudText Typo="Typo.body1">3_curfbin_Function Bin (i.e. 301)</MudText>
+<MudText Typo="Typo.body1">3_curibin_Interface Bin (i.e. 3)</MudText>
+<MudText Typo="Typo.body1">2_visualid_Visual ID</MudText>
+<MudText Typo="Typo.body1">2_trlot_ / 2_sstrlot_Sort Lot</MudText>
+<MudText Typo="Typo.body1">2_trwafer_ / 2_sstrwafer_Sort Wafer</MudText>
+<MudText Typo="Typo.body1">2_trxloc_ / 2_sstrxloc_Sort X location</MudText>
+<MudText Typo="Typo.body1">2_tryloc_ / 2_sstryloc_Sort Y location</MudText>
+
+<MudText Typo="Typo.h6">iTuff header is parsed to determine the “key” for the [pinfinder_config] table:</MudText>
+<MudText Typo="Typo.body1">[Package_ID_Search_Text] Ex:6_packg_~~~</MudText>
+<MudText Typo="Typo.body1">[Test_Program_Search_Text]</MudText>
+<MudText Typo="Typo.body1">[Test_Program_Search_Text] Ex:6_prgnm_~~~</MudText>
+<MudText Typo="Typo.body1">[Interface_Unit_ID_Search_Text] Ex:4_ldbid_~~~, 3_tiuid_~~~</MudText>
+<MudText Typo="Typo.body1">[Tester] Ex:6_testertype_~~~</MudText>
+<MudText Typo="Typo.body1">[pinfinder_config] is queried to match the above conditions and returns the row containing the above fields as well as:</MudText>
+<MudText Typo="Typo.body1">[Interface Unit Design ID]</MudText>
+<MudText Typo="Typo.body1">[Manufactured Unit Design ID]</MudText>
+<MudText Typo="Typo.body1">If no match is found, then the product isn’t configured properly and Error is returned</MudText>
+<MudText Typo="Typo.body1">iTuff file is parsed and output (failing channels) stored on a JSON</MudText>
+<MudText Typo="Typo.body1">Call Trace to find out which failing test name prefix matches the user’s bin</MudText>
+<MudText Typo="Typo.body1">If no match from Trace, determine which key words in the 2_tname field corresponds to the user’s bin(s)</MudText>
+<MudText Typo="Typo.body1">Read “BinTokens” JSON text file to look up the keys words for each bin</MudText>
+
+<MudText Typo="Typo.h6">BinTokens JSON text file:</MudText>
+<MudText Typo="Typo.body1">"8": "HWALARM,!DFF,cont,CONT,vcc,Cont,VCC,Vcc,shorts",</MudText>
+<MudText Typo="Typo.body1">"9": "leak,LEAK,Leak,LKG,lkg,dc_lk",</MudText>
+<MudText Typo="Typo.body1">"10": "SHOPS,EDM,edm,open,Open,OPEN,short,Short,SHORT,shops,op,cont,upper,lower,dc_,shrts,OS_!VCC,!Time,OS,AZALIA",</MudText>
+<MudText Typo="Typo.body1">"11": "MIO,SIO,UPI,MIO,DDR,VIX,VOX,VIL,VIH,VOL,VOH,Vix,Vox,Rodt,vix,vox,vil,vih,Vix,Vox,Rodt,AGTL_,Ron,CMOS_,OD_,Via,VIA,!EDC,IOPMU,PCHIODC,PCHRTCG3 ,!TTR",</MudText>
+<MudText Typo="Typo.body1">"12": "bf,BF,psmi,PSMI,COREFT,First,!hmoo,rcomp",</MudText>
+<MudText Typo="Typo.body1">"13": "SIO,UPI,MIO,DDR,VIX,VOX,VIL,VIH,VOL,VOH,Vix,Vox,Rodt,vix,vox,vol,voh,Vix,Vox,Rodt,AGTL_,Ron,CMOS_,OD_,Via,VIA,via,!EDC,pll,rup,rdn,IOPMU,!LEAK,!SCRBRD,!BSCANLKG",</MudText>
+<MudText Typo="Typo.body1">"15": "!Negative,!ttr,SHOPS,Shops,open,opens,Open,OPEN,short,Short,SHORT,shops,op,cont,upper,lower,EDM,edm,dc_,shrts,OS_,!VCC,!Time,!tt_,!testtime,OS,!DTS,qpiDC,shodc,SHODCXH,extest",</MudText>
+<MudText Typo="Typo.body1">"16": "AC,ACIO,acio,io,IOLB,PEG,peg,Peg,DMI,dmi,RTERM,!tion,!EDM",</MudText>
+<MudText Typo="Typo.body1">"19": "reset,RESET,Reset,pll,PLL",</MudText>
+<MudText Typo="Typo.body1">"22": "RTERM,Rterm,VIA,Rss,Rodt",</MudText>
+<MudText Typo="Typo.body1">"25": "</MudText>
+
+<MudText Typo="Typo.body1">"25": "buf,bscan,BScan,BSCAN,tog",</MudText>
+<MudText Typo="Typo.body1">"27": "ssid,SSID,io,IO,FDI,FIVR,LDO",</MudText>
+<MudText Typo="Typo.body1">"28": "cres,CRES,pll",</MudText>
+<MudText Typo="Typo.body1">"29": "HBMIO,FBIST,SCN",</MudText>
+<MudText Typo="Typo.body1">"30": "VIPR",</MudText>
+<MudText Typo="Typo.body1">"32": "rcomp,RCOMP",</MudText>
+<MudText Typo="Typo.body1">"34": "MDFI",</MudText>
+<MudText Typo="Typo.body1">"35": "DFX,HTD,!delay",</MudText>
+<MudText Typo="Typo.body1">"36": "FBIST",</MudText>
+<MudText Typo="Typo.body1">"37": "ttr,cont,CONT,vcc,Cont,_",</MudText>
+<MudText Typo="Typo.body1">"40": "vohm",</MudText>
+<MudText Typo="Typo.body1">"41": "scan,chain",</MudText>
+<MudText Typo="Typo.body1">"42": "scan,chain,atpg,ATPG,SCN",</MudText>
+<MudText Typo="Typo.body1">"43": "io,IO,sata,!tio,TRIM",</MudText>
+<MudText Typo="Typo.body1">"44": "!tpg,sbft,SBFT,st_full,fcdragon",</MudText>
+<MudText Typo="Typo.body1">"46": "SIO,UPI,buffer_toggle,xor,XOR,rxdetCMTSocketFile,ntl,viadelam,rxdet",</MudText>
+<MudText Typo="Typo.body1">"48": "SIO,IBIST,ntl,viadelam,rxdet,!SCRBRD",</MudText>
+<MudText Typo="Typo.body1">"50": "CPGC,cpgc",</MudText>
+<MudText Typo="Typo.body1">"51": "ODT,odt",</MudText>
+<MudText Typo="Typo.body1">"52": "UNCOREFT,iobist",</MudText>
+<MudText Typo="Typo.body1">"54": "pcie,PCI,PIO,pio,IO,!PMU,!PSIO",</MudText>
+<MudText Typo="Typo.body1">"60": "ARR,CORE,PBIST,pbist",</MudText>
+<MudText Typo="Typo.body1">"62": "VOLTAGE",</MudText>
+<MudText Typo="Typo.body1">"64": "THERMAL,thermal",</MudText>
+<MudText Typo="Typo.body1">"67": "visualid,visid,VISUALID",</MudText>
+<MudText Typo="Typo.body1">"68": "MIO,DDR,IOFS",</MudText>
+<MudText Typo="Typo.body1">"74": "RTERM",</MudText>
+<MudText Typo="Typo.body1">"75": "RTERM",</MudText>
+<MudText Typo="Typo.body1">"79": "RTERM",</MudText>
+<MudText Typo="Typo.body1">"94": "HWALARM",</MudText>
+<MudText Typo="Typo.body1">"97": "HANDLER,CHUCK",</MudText>
+<MudText Typo="Typo.body1">"98": "HWALARM,leak,LEAK,Leak,LKG,lkg,_",</MudText>
+<MudText Typo="Typo.body1">"99": "HWALARM,!diva",</MudText>
+<MudText Typo="Typo.body1">"all": "failbump,faildata"</MudText>
+
+<MudText Typo="Typo.h6">Supported iTUFF formats:</MudText>
+<MudText Typo="Typo.body1">Format 1</MudText>
+<MudText Typo="Typo.body1">2_tname_~~~~</MudText>
+<MudText Typo="Typo.body1">2_category_fc</MudText> *@
+@* <MudText Typo="Typo.body1">2_composite_<channel1>_<measurement1></MudText>
+<MudText Typo="Typo.body1">2_composite_<channel2>_<measurement2></MudText>
+<MudText Typo="Typo.body1">...</MudText>
+<MudText Typo="Typo.body1">2_composite_<channelN>_<measurementN></MudText>
+<MudText Typo="Typo.body1">2_msunit_<units></MudText>
+
+<MudText Typo="Typo.body1">Format 2</MudText>
+<MudText Typo="Typo.body1">2_tname_~~~~</MudText>
+<MudText Typo="Typo.body1">Support both pin_name|measurement or pin_name|pin_name</MudText>
+<MudText Typo="Typo.body1">2_strgval_<N failures>|<Pin1>|<measurement1>|<Pin2>|<measurement2>|...|<PinN>|<measurement3></MudText>
+<MudText Typo="Typo.body1">2_strgval_<N failures>|<Pin1>|<Pin2>|<Pin3>|<Pin4>|...|<PinN></MudText>
+<MudText Typo="Typo.body1">2_comnt_failpins_{<channel1>,<channel2>,...,<channelN>}</MudText>
+
+<MudText Typo="Typo.body1">Format 3</MudText>
+<MudText Typo="Typo.body1">[02]_tname__~~~~</MudText>
+<MudText Typo="Typo.body1">[02]_mrslt_<measurement></MudText>
+<MudText Typo="Typo.body1">[02]_msunit_<units></MudText>
+<MudText Typo="Typo.body1">[02]_comnt_faildata_{<channel1>}</MudText>
+
+<MudText Typo="Typo.body1">Format 4 (Shops test for CLASS and BURN-IN)</MudText>
+<MudText Typo="Typo.body1">2_tname_~~~~</MudText>
+<MudText Typo="Typo.body1">2_pttrn_DomainName:FailingPattern:FailingPatternList</MudText>
+<MudText Typo="Typo.body1">...</MudText>
+<MudText Typo="Typo.body1">2_faildata_{<channel1>,<channel2>,...,<channelN>}</MudText>
+<MudText Typo="Typo.body1">Prefix of “9” is put in front of the “DUT-mapped” output Channel# for each input pin that fails to indicate that this is not the actual channel that failed (post processing)</MudText>
+<MudText Typo="Typo.body1">2_comnt_failpins_{<Pin1>,<Pin2>,...,<PinN>}</MudText> *@
+
+@* <MudText Typo="Typo.body1">Burn-in test</MudText>
+<MudText Typo="Typo.body1">For the HBI tester, it will not use Tester Channel Number as the decoding criteria just like other tester, instead it will use the Socket Channel Number i.e. 15099 – “15” is the HBI socket number and “099” is the channel number. The last three digit is always going to be the channel number</MudText>
+<MudText Typo="Typo.body1">In HBI tester, there will be 16 sockets.</MudText>
+<MudText Typo="Typo.body1">The current supported HBI bins are only for I/O connectivity with SHOPS and RESET failure which are for bin 10, 15 and 19</MudText>
+
+<MudText Typo="Typo.body1">Format 5 (VIX/VOX Search)</MudText>
+<MudText Typo="Typo.body1">2_tname_~~~~</MudText> *@
+@* <MudText Typo="Typo.body1">2_category_fc<num></MudText>
+<MudText Typo="Typo.body1">2_pttrn_DomainName:FailingPattern:FailingPatternList</MudText>
+<MudText Typo="Typo.body1">2_comnt_A!_composite_9<channel1>_<measurement1></MudText>
+<MudText Typo="Typo.body1">Prefix of “9” is put in front of the “DUT-mapped” output Channel# for each input pin that fails to indicate that this is not the actual channel that failed (post processing)</MudText>
+<MudText Typo="Typo.body1">2_comnt_A!_composite_9<channel2>_<measurement2></MudText>
+<MudText Typo="Typo.body1">...</MudText>
+<MudText Typo="Typo.body1">2_comnt_A!_composite_9<channelN>_<measurementN></MudText>
+<MudText Typo="Typo.body1">2_msunit_<units></MudText>
+<MudText Typo="Typo.body1">2_comnt_failpins_{<Pin1>,<Pin2>,...,<PinN>}</MudText>
+
+<MudText Typo="Typo.body1">Format 6 PCAT (EItuff) – different iTUFF file – only parse this file if specifically requested and report whatever is found</MudText>
+<MudText Typo="Typo.body1">Old PCAT format</MudText>
+<MudText Typo="Typo.body1">2_tname_PF_PCAT_FailData (special token)</MudText>
+<MudText Typo="Typo.body1">2_strgval_<channel1>|<channel2>|...|<channelN></MudText>
+<MudText Typo="Typo.body1">New PCAT Format (EItuff) – use this format if not “PF_PCAT_FailData” is found in the PCAT file (backward compatible)</MudText>
+<MudText Typo="Typo.body1">2_tname_VOL_FailPins</MudText>
+<MudText Typo="Typo.body1">2_strgval_<Pin1>|<Pin2>|...|<PinN></MudText>
+<MudText Typo="Typo.body1">Use the Socket file to translate to Channel?</MudText>
+
+<MudText Typo="Typo.body1">Format 7 OPIO:</MudText>
+<MudText Typo="Typo.body1">0_tname_~~~~_faildata</MudText>
+<MudText Typo="Typo.body1">0_strgval_<Pin1>,<Pin2>,...,<PinN></MudText>
+
+<MudText Typo="Typo.body1">Format 8 RCOMP:</MudText>
+<MudText Typo="Typo.body1">0_tname_~~~~_FailPins</MudText>
+<MudText Typo="Typo.body1">0_strgval_<Pin1>|<Pin2>|...|<PinN></MudText>
+
+<MudText Typo="Typo.body1">Format 9 No touch or Power Rail (HDMX/T) (1):</MudText>
+<MudText Typo="Typo.body1">0_tname_~~~~_[af]c\d</MudText>
+<MudText Typo="Typo.body1">0_strgval_<N failures>|<Pin1>|<measurement1>|<Pin2>|<measurement2>|...|<PinN>|<measurement3></MudText>
+<MudText Typo="Typo.body1">No touch pin decoding note:</MudText>
+<MudText Typo="Typo.body1">All the no touch Pin will have a dummy “Tester Channel Number” that is illustrated as negative number value in the Pinfinder database. However, these “Tester Channel Number” information will not be displayed in the Pinfinder ITuff prober.</MudText>
+<MudText Typo="Typo.body1">The “Name” will be use as the matching criteria in no touch pin instead of the “Tester Channel Number” in the normal touched pin. These “Name” or the other name for it is “Net Name” should match the “Signal Name” data from our Pinfinder Supported Product</MudText>
+<MudText Typo="Typo.body1">You can select the product database base on clicking on the related product configuration in the Pinfinder Supported Product webpage</MudText>
+<MudText Typo="Typo.body1">Power rail decoding note (HDMX/HDMT) (1):</MudText>
+<MudText Typo="Typo.body1">All the power rail Pin will have “Tester Channel Number” that is illustrated as the number that has value of 0 to 999 and 11000 to 11999 in the Pinfinder database. This “Tester Channel Number” information will be displayed in the Pinfinder ITuff prober.</MudText>
+<MudText Typo="Typo.body1">The “Name” will be use as the matching criteria in no touch pin instead of the “Tester Channel Number” in the normal touched pin. These “Name” or the other name for it is “Net Name” should match the “Signal Name” data from our Pinfinder Supported Product</MudText>
+<MudText Typo="Typo.body1">There’s possibility of having more than one “Tester Channel Number” for one “Net Name”. For this case, we will put on tagging for that particular row in the Pinfinder for the “Tester Channel Number”</MudText>
+<MudText Typo="Typo.body1">Example: <Tester Channel Number 1>|<Tester Channel Number 2>|…|<Tester Channel Number N></MudText>
+<MudText Typo="Typo.body1">There’s possibility of having more than one “Net Name” for one “Tester Channel Number”. For this case, Pinfinder will grab the “Net Name” from the iTuff and will detect all the other “Net Name” that have the same “Tester Channel Number” from the Pinfinder database. All the other “Net Name” will be displayed for the user</MudText>
+
+<MudText Typo="Typo.body1">Format 10 Power Rail (HDMX/T) (2):</MudText>
+<MudText Typo="Typo.body1">It can follow any format as long as a clear Test_Name is available</MudText>
+<MudText Typo="Typo.body1">Power rail decoding note (HDMX/HDMT) (2):</MudText>
+<MudText Typo="Typo.body1">The Test_Name from iTuff will be matched with the Test_Name from the Bin8/Bin99 lookup table from the Pinfinder database to get the Net_Name</MudText>
+<MudText Typo="Typo.body1">This will always be the end result (overwrite the normal decoding result) as it is a final layer of decoding provided that the Test_Name from the iTuff is matching the Test_Name from the Pinfinder database</MudText>
+<MudText Typo="Typo.body1">Link to Bin8/Bin99 lookup table: <a href="http://pinfinder.intel.com/PinFinder/avacado/lookup_table">http://pinfinder.intel.com/PinFinder/avacado/lookup_table</a> or it can be found at the bottom of Pinfinder ITuff prober page</MudText>
+
+<MudText Typo="Typo.body1">Format 11 Function Test support:</MudText>
+<MudText Typo="Typo.body1">2_tname_~~~~</MudText>
+<MudText Typo="Typo.body1">....</MudText>
+<MudText Typo="Typo.body1">2_pttrn_domain:<Pattern>(:Plist)</MudText>
+<MudText Typo="Typo.body1">....</MudText>
+<MudText Typo="Typo.body1">2_vcont_<Vector></MudText>
+<MudText Typo="Typo.body1">....</MudText>
+<MudText Typo="Typo.body1">2_faildata_{<channel1>,<channel2>,...,<channelN>}</MudText>
+
+<MudText Typo="Typo.body1">Format 12.A Alarm Log:</MudText>
+<MudText Typo="Typo.body1">2_tname_<HWALARM_~~~>|Pin:<Pin>|Type:<Type></MudText>
+<MudText Typo="Typo.body1">2_strgval_Module:<Module>|Block:<Block>|Connector:<Connector>|BusPort:<BusPort>|Time:0</MudText>
+
+<MudText Typo="Typo.body1">Format 12.B Alarm Log:</MudText>
+<MudText Typo="Typo.body1">2_tname_<HWALARM_~~~>|Pin:<Pin>|Type:<Type></MudText>
+<MudText Typo="Typo.body1">2_strgval_Module:<Module>|Channel:<Block>|Connector:<Connector>|BusPort:<BusPort>|Time:0</MudText>
+<MudText Typo="Typo.body1">Time format can be more than 50 characters</MudText>
+<MudText Typo="Typo.body1">Alarm log decoding note (HDMX/HDMT):</MudText>
+<MudText Typo="Typo.body1">The Test_Name and the Pin from iTuff will be matched with the Test_Name and the Substrate Net Name respectively from the Bin8/Bin99 lookup table in the Pinfinder database to get the Net_Name</MudText>
+<MudText Typo="Typo.body1">This will always be the end result (overwrite the normal decoding result) as it is a final layer of decoding provided that the Test_Name and the Pin from the iTuff is matching the Test_Name and the Substrate Net Name from the Pinfinder database</MudText>
+
+<MudText Typo="Typo.body1">Format 13 EMIB format (1):</MudText>
+<MudText Typo="Typo.body1">[0|2]_tname_<test_name>|<pin>_failbump</MudText>
+<MudText Typo="Typo.body1">[0|2]_strgval_<failpat1>|<failpat2>|...|<failpatN></MudText>
+<MudText Typo="Typo.body1">For SSID die decoding:</MudText>
+<MudText Typo="Typo.body1">[0|2]_tname_<test_name>|<pin>_DIEXX_failbump</MudText>
+<MudText Typo="Typo.body1">XX can be 00, 01, 10, 11</MudText>
+
+<MudText Typo="Typo.body1">Format 14 EMIB format (2): (might have limitation on the tname length)</MudText>
+<MudText Typo="Typo.body1">[0|2]_tname_<test_name>|<pin1>|<pin2>|…|<pinN>_failbump</MudText>
+<MudText Typo="Typo.body1">[0|2]_strgval_<failpat1>|<failpat2>|...|<failpatN></MudText>
+<MudText Typo="Typo.body1">For SSID die decoding:</MudText>
+<MudText Typo="Typo.body1">[0|2]_tname_<test_name>|<pin>_DIEXX_failbump</MudText>
+<MudText Typo="Typo.body1">XX can be 00, 01, 10, 11</MudText>
+
+<MudText Typo="Typo.body1">EMIB format (3): (to overcome the limitation on format (2)) – applicable in next patch</MudText>
+<MudText Typo="Typo.body1">[0|2]_tname_<test_name>|<pin1>_failbump</MudText>
+<MudText Typo="Typo.body1">[0|2]_strgval_<pin2>|<pin3>|…|<pinN>_failbump</MudText>
+<MudText Typo="Typo.body1">For SSID die decoding:</MudText>
+<MudText Typo="Typo.body1">[0|2]_tname_<test_name>|<pin>_DIEXX_failbump</MudText>
+<MudText Typo="Typo.body1">XX can be 00, 01, 10, 11</MudText> *@
+
+@* <MudText Typo="Typo.body1">Failing Channels from JSON are translated to Failing Signal Names by database lookup:</MudText>
+<MudText Typo="Typo.body1">Look up Tester channel in [tiu_substrate] table (this table needs to be loaded by the Scheduled Task “PinFinderMidasLoader” on sc11ssql301)</MudText>
+<MudText Typo="Typo.body1">Match the row that contains:</MudText>
+<MudText Typo="Typo.body1">[Package_ID_Search_Text] from [pinfinder_config]</MudText>
+<MudText Typo="Typo.body1">[Test_Program_Search_Text] from [pinfinder_config]</MudText>
+<MudText Typo="Typo.body1">[Interface_Unit_ID_Search_Text] from [pinfinder_config]</MudText>
+<MudText Typo="Typo.body1">[Interface Unit Design ID] from [pinfinder_config]</MudText>
+<MudText Typo="Typo.body1">[Manufactured Unit Design ID] from [pinfinder_config]</MudText>
+<MudText Typo="Typo.body1">[Tester_Channel_Num] iTUFF failing channel</MudText>
+<MudText Typo="Typo.body1">[Socket_ID] 3_socket_~~~</MudText>
+<MudText Typo="Typo.body1">[Valid_Flag] Y (N are old invalid rows...)</MudText>
+<MudText Typo="Typo.body1">Output row contains:</MudText>
+<MudText Typo="Typo.body1">[Connector_Name] / [Connector_ID] Ex: AB12</MudText>
+<MudText Typo="Typo.body1">[Manufactured_Unit_Signal_Name] Signal Name</MudText>
+<MudText Typo="Typo.body1">[Connector_Location_Flag] Top or Bottom Connector</MudText>
+<MudText Typo="Typo.body1">[Tester_Channel_Pin_Name] Tester Channel to debug Tester</MudText>
+
+<MudText Typo="Typo.body1">SIID binning display support</MudText>
+<MudText Typo="Typo.body1">Will be supporting all the product that contain all of below conditions:</MudText>
+<MudText Typo="Typo.body1">Contain die information within the iTuff which satisfies the Pinfinder spec format</MudText>
+<MudText Typo="Typo.body1">Supportable product is the product that have up to 4 dies</MudText>
+<MudText Typo="Typo.body1">Supportable product is the product that have more than 1 die</MudText>
+<MudText Typo="Typo.body1">Report Results to User</MudText>
+
+
+
+
+
+<MudContainer>
+    <MudText Typo="Typo.h5" Align="Align.Center" GutterBottom="true">PinFinder Classic Spec</MudText>
+    <MudText Typo="Typo.subtitle1" Align="Align.Center" GutterBottom="true">Release version x.x.x</MudText>
+
+    <MudList T="string">
+        <MudListItem>Users such as FA or LYA should able to browse and accessing pinfinder.intel.com webpage.</MudListItem>
+        <MudListItem>If you select "Site", it will get intended data from the specific site that is selected.</MudListItem>
+        <MudListItem>User can use the Filter options to get the data.</MudListItem>
+        <MudList>
+            <MudListItem>[site_ituffs] table is queried for that site to get all of the search paths for that site</MudListItem>
+            <MudListItem>Paths are searched and Operation Pull down is populated</MudListItem>
+        </MudList>
+        <MudListItem>User selects an Operation</MudListItem>
+        <MudList>
+            <MudListItem>[site_ituffs] table is queried for that site to get all of the search paths for that site</MudListItem>
+            <MudListItem>Summary file list Pull down is populated</MudListItem>
+        </MudList>
+        <MudListItem>User selects a Summary (MIDAS file is included in this list)</MudListItem>
+        <MudListItem>User hits “Submit” (or happens right after a Summary is Chosen?)</MudListItem>
+        <MudListItem>iTuff Parser starts</MudListItem>
+    </MudList>
+
+    <MudText Typo="Typo.body1" GutterBottom="true">iTuff tokens used for Lot / Part information:</MudText>
+    <MudList T="string" Dense="true">
+        <MudListItem>6_lotid_ Lot ID</MudListItem>
+        <MudListItem>6_prgnm_ Test Program Name</MudListItem>
+        <MudListItem>6_packg_ Package</MudListItem>
+        <MudListItem>6_prdct_ Product</MudListItem>
+        <MudListItem>6_testertype_ Tester Type</MudListItem>
+        <MudListItem>6_comnt_socfile_ Socket File</MudListItem>
+        <MudListItem>5_lcode_ Location Code / Operation</MudListItem>
+        <MudListItem>4_smrynam_ Summary Name</MudListItem>
+        <MudListItem>4_sysid_ Tester Name</MudListItem>
+        <MudListItem>4_tempr_ Temperature</MudListItem>
+        <MudListItem>4_ldbid_ / _tiuid_ Tiu ID</MudListItem>
+        <MudListItem>3_lsep Unit Separator</MudListItem>
+        <MudListItem>3_prtnm_ Part Number</MudListItem>
+        <MudListItem>3_socket_ Socket Number</MudListItem>
+        <MudListItem>3_curfbin_ Function Bin (i.e. 301)</MudListItem>
+        <MudListItem>3_curibin_ Interface Bin (i.e. 3)</MudListItem>
+        <MudListItem>2_visualid_ Visual ID</MudListItem>
+        <MudListItem>2_trlot_ / 2_sstrlot_ Sort Lot</MudListItem>
+        <MudListItem>2_trwafer_ / 2_sstrwafer_ Sort Wafer</MudListItem>
+        <MudListItem>2_trxloc_ / 2_sstrxloc_ Sort X location</MudListItem>
+        <MudListItem>2_tryloc_ / 2_sstryloc_ Sort Y location</MudListItem>
+    </MudList>
+
+    <MudText Typo="Typo.body1" GutterBottom="true">iTuff header is parsed to determine the “key” for the [pinfinder_config] table:</MudText>
+    <MudList T="string" Dense="true">
+        <MudListItem>[Package_ID_Search_Text] Ex: 6_packg_~~~</MudListItem>
+        <MudListItem>[Test_Program_Search_Text] Ex: 6_prgnm_~~~</MudListItem>
+        <MudListItem>[Interface_Unit_ID_Search_Text] Ex: 4_ldbid_~~~, 3_tiuid_~~~</MudListItem>
+        <MudListItem>[Tester] Ex: 6_testertype_~~~</MudListItem>
+    </MudList>
+
+    <MudText Typo="Typo.body1" GutterBottom="true">[pinfinder_config] is queried to match the above conditions and returns the row containing the above fields as well as:</MudText>
+    <MudList T="string" Dense="true">
+        <MudListItem>[Interface Unit Design ID]</MudListItem>
+        <MudListItem>[Manufactured Unit Design ID]</MudListItem>
+    </MudList>
+
+    <MudText Typo="Typo.body1" GutterBottom="true">If no match is found, then the product isn’t configured properly and Error is returned.</MudText>
+
+    <MudText Typo="Typo.body1" GutterBottom="true">iTuff file is parsed and output (failing channels) stored on a JSON.</MudText>
+    <MudText Typo="Typo.body1" GutterBottom="true">Call Trace to find out which failing test name prefix matches the user’s bin.</MudText>
+    <MudText Typo="Typo.body1" GutterBottom="true">
+        If no match from Trace, determine which key words in the 2_tname field correspond to the user’s bin(s).
+        Read “BinTokens” JSON text file to look up the keys words for each bin.
+    </MudText>
+
+    <MudList T="string" Dense="true">
+        <MudListItem>"8": "HWALARM,!DFF,cont,CONT,vcc,Cont,VCC,Vcc,shorts"</MudListItem>
+        <MudListItem>"9": "leak,LEAK,Leak,LKG,lkg,dc_lk"</MudListItem>
+        <MudListItem>"10": "SHOPS,EDM,edm,open,Open,OPEN,short,Short,SHORT,shops,op,cont,upper,lower,dc_,shrts,OS_!VCC,!Time,OS,AZALIA"</MudListItem>
+        <MudListItem>"11": "MIO,SIO,UPI,MIO,DDR,VIX,VOX,VIL,VIH,VOL,VOH,Vix,Vox,Rodt,vix,vox,vil,vih,Vix,Vox,Rodt,AGTL_,Ron,CMOS_,OD_,Via,VIA,!EDC,IOPMU,PCHIODC,PCHRTCG3,!TTR"</MudListItem>
+        <MudListItem>"12": "bf,BF,psmi,PSMI,COREFT,First,!hmoo,rcomp"</MudListItem>
+        <MudListItem>"13": "SIO,UPI,MIO,DDR,VIX,VOX,VIL,VIH,VOL,VOH,Vix,Vox,Rodt,vix,vox,vol,voh,Vix,Vox,Rodt,AGTL_,Ron,CMOS_,OD_,Via,VIA,via,!EDC,pll,rup,rdn,IOPMU,!LEAK,!SCRBRD,!BSCANLKG"</MudListItem>
+        <MudListItem>"15": "!Negative,!ttr,SHOPS,Shops,open,opens,Open,OPEN,short,Short,SHORT,shops,op,cont,upper,lower,EDM,edm,dc_,shrts,OS_,!VCC,!Time,!tt_,!testtime,OS,!DTS,qpiDC,shodc,SHODCXH,extest"</MudListItem>
+        <MudListItem>"16": "AC,ACIO,acio,io,IOLB,PEG,peg,Peg,DMI,dmi,RTERM,!tion,!EDM"</MudListItem>
+        <MudListItem>"19": "reset,RESET,Reset,pll,PLL"</MudListItem>
+        <MudListItem>"22": "RTERM,Rterm,VIA,Rss,Rodt"</MudListItem>
+        <MudListItem>"25": "buf,bscan,BScan,BSCAN,tog"</MudListItem>
+        <MudListItem>"27": "ssid,SSID,io,IO,FDI,FIVR,LDO"</MudListItem>
+        <MudListItem>"28": "cres,CRES,pll"</MudListItem>
+        <MudListItem>"29": "HBMIO,FBIST,SCN"</MudListItem>
+        <MudListItem>"30": "VIPR"</MudListItem>
+        <MudListItem>"32": "rcomp,RCOMP"</MudListItem>
+        <MudListItem>"34": "MDFI"</MudListItem>
+        <MudListItem>"35": "DFX,HTD,!delay"</MudListItem>
+        <MudListItem>"36": "FBIST"</MudListItem>
+        <MudListItem>"37": "ttr,cont,</MudListItem>
+
+    </MudList>
+
+</MudContainer> *@

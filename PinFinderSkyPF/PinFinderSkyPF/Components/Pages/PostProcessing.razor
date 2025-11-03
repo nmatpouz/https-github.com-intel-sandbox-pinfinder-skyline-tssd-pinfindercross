@@ -1,0 +1,260 @@
+﻿@page "/postprocessing"
+@using MudBlazor
+@using System.Net.Http.Json
+@using System.Text.Json
+@inject HttpClient Http
+@inject MockApiService ApiService
+
+
+<MudExpansionPanels Class="z-30 mb-4">
+    <MudExpansionPanel Text="PostProcessing" @bind-IsExpanded="@isExpanded">
+        <TitleContent>
+            <MudText Typo="Typo.h6" GutterBottom="true">Post Processing Query Form</MudText>
+        </TitleContent>
+        <ChildContent>
+            <MudGrid Spacing="2" Model="queryForm">
+                <MudItem xs="6" md="3">
+                    <MudTextField @bind-Value="queryForm.LotNumber" Label="Lot Number" Variant="Variant.Filled" OnBlur="ValidateLotNumberAndOperation" />
+                </MudItem>
+                <MudItem xs="6" md="3">
+                    <MudTextField @bind-Value="queryForm.Operation" Label="Operation" Variant="Variant.Filled" OnBlur="ValidateLotNumberAndOperation" />
+                </MudItem>
+                <MudItem xs="6" md="3">
+                    <MudSelect @bind-Value="queryForm.Summary" Label="Summary" Variant="Variant.Filled" Disabled="@summaryEnabled">
+                        @foreach (var summary in summaries)
+                        {
+                            <MudSelectItem Value="@summary">@summary</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6" md="3">
+                    <MudText>Options:</MudText>
+                    <MudCheckBox @bind-Value="Checkbox1_ShowRetestData" Label="Retest Data" OnCheckedChanged="(value) => OnCheckboxChanged(value, 1)" Disabled="@Checkbox2_TrayItuff" />
+                    <MudCheckBox @bind-Value="Checkbox2_TrayItuff" Label="Tray Ituff" OnCheckedChanged="(value) => OnCheckboxChanged(value, 2)" Disabled="@Checkbox1_ShowRetestData" />
+                </MudItem>
+            </MudGrid>
+            <div class="d-flex">
+                <MudIconButton Icon="@Icons.Material.Filled.Search" OnClick="SearchFilter" contextmenu="User" Color="MudBlazor.Color.Inherit" />
+                <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="RefreshFilter" contextmenu="User" Color="MudBlazor.Color.Inherit" />
+            </div>
+        </ChildContent>
+
+    </MudExpansionPanel>
+</MudExpansionPanels>
+
+@{
+    if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <MudAlert Severity="Severity.Error">@errorMessage</MudAlert>
+    }
+    
+}
+
+@{
+    if (showResult)
+    {
+        //post-processing data display
+    }
+}
+
+@code {
+
+    private bool isExpanded = false;
+    private bool showResult = false;
+    private string errorMessage = string.Empty;
+    private bool summaryEnabled = false;
+    private List<string> summaries = new List<string>();
+
+    // Query Options expand
+    private void TogglePanel()
+    {
+        isExpanded = !isExpanded;
+    }
+
+    // Create filter object instance
+    private PostProcessing postprocessing = new PostProcessing();
+
+    // Create class of PostProcessing
+    public class PostProcessings
+    {
+        public string LotNumber { get; set; } = string.Empty;
+        public string Operation { get; set; } = string.Empty;
+        public string Summary { get; set; } = string.Empty;
+        public string RetestData { get; set; } = string.Empty;
+        public string TrayItuff { get; set; } = string.Empty;
+    }
+
+    // Create QueryOptions object instance
+    private QueryForm queryForm = new QueryForm();
+
+    // Create class of QueryOptions
+    public class QueryForm()
+    {
+        public string LotNumber { get; set; } = string.Empty;
+        public string Operation { get; set; } = string.Empty;
+        public string Summary { get; set; } = string.Empty;
+        public string RetestData { get; set; } = string.Empty;
+        public string TrayItuff { get; set; } = string.Empty;
+    }
+
+    // Check Lot Number and Operation Existance
+    private async Task ValidateLotNumberAndOperation()
+    {
+        if (!string.IsNullOrEmpty(queryForm.LotNumber) && !string.IsNullOrEmpty(queryForm.Operation))
+        {
+            // var response = await Http.PostAsJsonAsync("api/checkexistence", new { queryForm.LotNumber, queryForm.Operation });
+            // if (response.IsSuccessStatusCode)
+            // {
+            //     var exists = await response.Content.ReadFromJsonAsync<bool>();
+            //     if (exists)
+            //     {
+            //         errorMessage = "Lot Number and Operation already exist.";
+            //     }
+            //     else
+            //     {
+            //         errorMessage = string.Empty;
+            //     }
+            // }
+            // else
+            // {
+            //     errorMessage = "Error: Lot Number and Operation nonexistent.";
+            // }
+
+            // Simulate
+            var exists = await ApiService.CheckExistenceAsync(queryForm.LotNumber, queryForm.Operation);
+            if (exists)
+            {
+                errorMessage = string.Empty;
+                summaryEnabled = true;
+                summaries = await ApiService.GetSummariesAsync(queryForm.LotNumber, queryForm.Operation);
+            }
+            else
+            {
+                errorMessage = "Lot Number and Operation do not exist.";
+                summaryEnabled = false;
+                summaries.Clear();
+            }
+
+        }
+        StateHasChanged();
+    }
+
+    // Check Lot's Summary
+    private async Task FetchSummaryOptions()
+    {
+        var response = await Http.GetFromJsonAsync<List<string>>($"api/getSummaries?lotNumber={queryForm.LotNumber}&operation={queryForm.Operation}");
+        if (response != null)
+        {
+            summaries = response;
+        }
+    }
+
+    // Button Search
+    private void SearchFilter()
+    {
+        postprocessing.LotNumber = queryForm.LotNumber;
+        postprocessing.Operation = queryForm.Operation;
+        postprocessing.Summary = queryForm.Summary;
+        postprocessing.RetestData = queryForm.RetestData;
+        postprocessing.TrayItuff = queryForm.TrayItuff;
+
+        Console.WriteLine("Search button clicked");
+        Console.WriteLine($"Information Input: LotNumber: {postprocessing.LotNumber}, Operation: {postprocessing.Operation}, Summary: {postprocessing.Summary}");
+        showResult = true;
+        StateHasChanged();
+
+    }
+
+    // Button Refresh - clear the input object instance filterForm
+    private void RefreshFilter()
+    {
+        Console.WriteLine("Refresh/Clear button clicked");
+        queryForm = new QueryForm();
+        showResult = false;
+        Console.WriteLine($"Information Cleared: LotNumber: {queryForm.LotNumber}, Operation: {queryForm.Operation}, Summary: {queryForm.Summary}");
+        errorMessage = string.Empty;
+        summaryEnabled = false;
+        summaries.Clear();
+    }
+
+    
+
+    private PostProcessingData postprocessingData = new PostProcessingData
+        {
+            //post-processing attributes
+        };
+
+    public class PostProcessingData
+    {
+        //post-processing attributes, need to tally and update
+        public string Program { get; set; } = string.Empty;
+        public string Product { get; set; } = string.Empty;
+        public string Package { get; set; } = string.Empty;
+        public string Step { get; set; } = string.Empty;
+        public string Tester { get; set; } = string.Empty;
+        public string Temperature { get; set; } = string.Empty;
+        public string TIU { get; set; } = string.Empty;
+        public string SocketFile { get; set; } = string.Empty;
+        public string StplFile { get; set; } = string.Empty;
+        public string EnvFile { get; set; } = string.Empty;
+        public string PinfinderTable { get; set; } = string.Empty;
+        public string Warning { get; set; } = string.Empty;
+    }
+
+    private List<PostProcessingData> postprocessingData_ = new List<PostProcessingData>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        postprocessingData_ = await Http.GetFromJsonAsync<List<PostProcessingData>>("");
+    }
+
+    public bool Checkbox1_ShowRetestData { get; set; } = false;
+    public bool Checkbox2_TrayItuff { get; set; } = false;
+
+    private void OnCheckboxChanged(bool value, int checkboxNumber)
+    {
+        if (checkboxNumber == 1)
+        {
+            Checkbox1_ShowRetestData = value;
+            if (value)
+            {
+                Checkbox2_TrayItuff = false;
+            }
+        }
+        else if (checkboxNumber == 2)
+        {
+            Checkbox2_TrayItuff = value;
+            if (value)
+            {
+                Checkbox1_ShowRetestData = false;
+            }
+        }
+    }
+
+    public class MockApiService
+    {
+        // Validate checking existence of LotNumber and Operation
+        public Task<bool> CheckExistenceAsync(string lotNumber, string operation)
+        {
+            // Validate response input LotNumber "123" and Operation "A" exist
+            if (lotNumber == "ABC123" && operation == "1234")
+            {
+                return Task.FromResult(true);
+            }
+            return Task.FromResult(false);
+        }
+
+        // Simulate fetching summarry for a given LotNumber and Operation
+        public Task<List<string>> GetSummariesAsync(string lotNumber, string operation)
+        {
+            // Mock response for LotNumber "123" and Operation "A"
+            if (lotNumber == "ABC123" && operation == "1234")
+            {
+                return Task.FromResult(new List<string> { "1A.gz", "2B.gz" });
+            }
+            return Task.FromResult(new List<string>());
+        }
+    }
+
+}
+

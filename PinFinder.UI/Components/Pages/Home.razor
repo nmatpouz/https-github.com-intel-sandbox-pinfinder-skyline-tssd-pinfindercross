@@ -1,0 +1,1745 @@
+﻿@page "/"
+@namespace PinFinder.UI.Pages
+@using MudBlazor
+@using PinFinder.Core.Controllers
+@using PinFinder.Core.Domain.Commands.Replies
+@using PinFinder.UI
+@using DrawingColor = System.Drawing.Color
+@using System.Drawing
+@using System.Text
+@using static MudBlazor.CategoryTypes
+@using System.ComponentModel.DataAnnotations
+@* @using System.Net.Http.Json *@
+@using System.Text.Json
+@using System.Collections.Generic
+@using System.Text.RegularExpressions
+@inject IJSRuntime JS
+@inject HttpClient Http
+@inject IItuffQueryController ItuffController;
+@inject SvgQueryController SvgController
+
+
+<div class="announcement-banner">
+    <MudPaper Elevation="1" Class="banner-paper">
+        <MudText Typo="Typo.h6" Color="MudBlazor.Color.Primary" Class="text-center">
+            📢 Announcement:<br>
+            Please be informed PinFinder 4.0 pilot released is available for KM site only at this moment.<br>
+            As PinFinder team only pilot it in KM. Other sites please use the old Pinfinder first.
+        </MudText>
+    </MudPaper>
+</div>
+
+
+<MudExpansionPanels Class="z-30 mb-4">
+    <MudExpansionPanel Text="Filter" @bind-IsExpanded="@isExpanded" Disabled="@isExpandedTIU" ExpandedChanged="@OnFirstPanelToggle" >
+        <TitleContent>
+            <MudText>ITUFF Prober Query</MudText>
+        </TitleContent>
+        <ChildContent>
+            <MudGrid Spacing="2" Model="filterForm" Class="">
+                <!-- First Row: Site, Lot Number, Operation, Search Button -->
+                <MudItem xs="12" md="2" Class="">
+                    <MudSelect T="string" @ref="siteSelect" @bind-Value="filteredSite" Label="Site" Variant="Variant.Filled" MultiSelection="false" OnClearButtonClick="() => RefreshFilter()" Clearable>
+                        @foreach (var site in siteList)
+                        {
+                            <MudSelectItem Value="@site">@site</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="2" Class="">
+                    <MudTextField @bind-Value="filterForm.LotNumber" Label="Lot Number" Variant="Variant.Filled" For="@(() => filterForm.LotNumber)" Class="me-2" />
+                </MudItem>
+
+                <MudItem xs="12" md="2" Class="">
+                    <MudTextField @bind-Value="filterForm.Operation" Label="Operation" Variant="Variant.Filled" For="@(() => filterForm.Operation)" TextAlign="TextAlign.End" InputAttributes="@(new Dictionary<string, object> { { "dir", "ltr" } })" />
+                </MudItem>
+                <MudItem xs="12" md="1" Class="align-center">
+                    <MudIconButton Icon="@Icons.Material.Filled.Search" OnClick="SummaryButtonClick" contextmenu="User" Color="MudBlazor.Color.Inherit" />
+                </MudItem>
+                <!-- Second Row: Summary, Search and Refresh Buttons -->
+                <MudItem xs="12" md="3" Class="mt-2">
+                    <MudSelect @bind-Value="filterForm.Summary" For="@(() => filterForm.Summary)" Label="Summary" Variant="Variant.Filled" Disabled="@summaryEnabled">
+                        @foreach (var summary in summaries)
+                        {
+                            <MudSelectItem Value="@summary">@summary</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="2" Class="mt-2">
+                    @if (isLoadingSummary)
+                    {
+                        <MudProgressCircular Color="MudBlazor.Color.Default" Indeterminate="true" />
+
+                    }
+                </MudItem>
+                <br />
+                <br />
+            </MudGrid>
+            <MudItem xs="12" md="12" Class="mt-2 d-flex justify-content-end">
+                <MudIconButton Icon="@Icons.Material.Filled.Search" OnClick="SearchTest" Disabled="@isSearchDisabled" contextmenu="User" Color="MudBlazor.Color.Inherit">
+                </MudIconButton>
+                <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="RefreshFilter" contextmenu="User" Color="MudBlazor.Color.Inherit" />
+            </MudItem>
+        </ChildContent>
+    </MudExpansionPanel>
+</MudExpansionPanels>
+
+<MudExpansionPanels Class="z-30 mb-4">
+    <MudExpansionPanel Text="Filter" @bind-IsExpanded="@isExpandedTIU" Disabled="@isExpanded" ExpandedChanged="@OnSecondPanelToggle">
+        <TitleContent>
+            <MudText>TIU Prober Query</MudText>
+        </TitleContent>
+        <ChildContent>
+            <MudGrid Spacing="2" Model="filterForm" Class="">
+                <!-- First Row: Site, Lot Number, Operation, Search Button -->
+                <MudItem xs="12" md="2" Class="">
+                    <MudSelect T="string" @ref="siteSelect" @bind-Value="filteredSite" Label="Site" Variant="Variant.Filled" MultiSelection="false" OnClearButtonClick="() => RefreshFilter()" Clearable>
+                        @foreach (var site in siteList)
+                        {
+                            <MudSelectItem Value="@site">@site</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="2" Class="">
+                    <MudTextField @bind-Value="filterFormTIU.TIUNumber" Label="TIU Number" Variant="Variant.Filled" For="@(() => filterFormTIU.TIUNumber)" Class="me-2" />
+                </MudItem>
+                <MudItem xs="12" md="2" Class="mt-2">
+                    @if (isLoadingTIU)
+                    {
+                        <MudProgressCircular Color="MudBlazor.Color.Default" Indeterminate="true" />
+
+                    }
+                </MudItem>
+                <MudItem xs="12" md="2" Class="">
+                    <MudNumericField @bind-Value="filterFormTIU.NumberOfDays"
+                    Label="Number of Days"
+                    Variant="Variant.Filled"
+                    For="@(() => filterFormTIU.NumberOfDays)"
+                    Min="1"
+                    Max="365"
+                    Step="1"
+                    HideSpinButtons="false"
+                    Class="me-2" />
+                </MudItem>
+                <br />
+                <br />
+            </MudGrid>
+            <MudItem xs="12" md="12" Class="mt-2 d-flex justify-content-end">
+                <MudIconButton Icon="@Icons.Material.Filled.Search" OnClick="SearchByTIU" Disabled="@isSearchDisabledTIU" contextmenu="User" Color="MudBlazor.Color.Inherit">
+                </MudIconButton>
+                <MudIconButton Icon="@Icons.Material.Filled.Refresh" OnClick="RefreshTIUQuery" contextmenu="User" Color="MudBlazor.Color.Inherit" />
+            </MudItem>
+        </ChildContent>
+    </MudExpansionPanel>
+</MudExpansionPanels>
+
+
+
+@* Display the loading progress in linear, once the Search Icon button is clicked and done processed *@
+@if (isLoading)
+{
+    <MudProgressLinear Indeterminate="true" Class="my-7" />
+}
+
+
+@* For testing purpos only when Console Writeline can't be use *@
+@* <MudProgressLinear Indeterminate="true" Class="my-7" OnClick="SearchTest" /> *@
+
+
+
+
+@* Display error message for any error that page having, the error string is hold  by errorMessage *@
+@{
+    if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <MudAlert Severity="Severity.Error">@errorMessage</MudAlert>
+    }
+}
+
+@{
+    // Button for Export to CSV
+    <div class="button-container spacing-between">
+        @{
+            if (showExportButton)
+            {
+                <MudButton OnClick="ExportData" Variant="Variant.Outlined" Color="MudBlazor.Color.Primary">Export Data</MudButton>
+            }
+
+            if (showExportButtonTIUQuery)
+            {
+                <MudButton OnClick="ExportDataTIUQuery" Variant="Variant.Outlined" Color="MudBlazor.Color.Primary">Export Data</MudButton>
+            }
+        }
+    </div>
+}
+
+@* Display the Header Data output once is done processed the showResult should have value true *@
+@{
+    if (showHeader == true)
+    {
+        // // Button for Export to CSV
+        // <div class="button-container spacing-between">
+        //     @{
+        //         if (showExportButton)
+        //         {
+        //             <MudButton OnClick="ExportData" Variant="Variant.Outlined" Color="MudBlazor.Color.Primary">Export Data</MudButton>
+        //         }
+        //     }
+        // </div>
+        <div class="gap-12 spacing-bottom">
+            <MudTable Fixed="true" T="HeaderData" Items="@headerdataList" Hover="true">
+                <RowTemplate>
+                    @foreach (var headerData in headerdataList)
+                    {
+                        <MudTr>
+                            <MudTd DataLabel="Field" style="font-weight: bold;">Program</MudTd>
+                            <MudTd DataLabel="Value">@context.Program</MudTd>
+                        </MudTr>
+                        <MudTr>
+                            <MudTd DataLabel="Field" style="font-weight: bold;">Product</MudTd>
+                            <MudTd DataLabel="Value">@context.Product</MudTd>
+                        </MudTr>
+                        <MudTr>
+                            <MudTd DataLabel="Field" style="font-weight: bold;">Package</MudTd>
+                            <MudTd DataLabel="Value">@context.Package</MudTd>
+                        </MudTr>
+                        <MudTr>
+                            <MudTd DataLabel="Field" style="font-weight: bold;">Tester</MudTd>
+                            <MudTd DataLabel="Value">@context.Tester</MudTd>
+                        </MudTr>
+                        <MudTr>
+                            <MudTd DataLabel="Field" style="font-weight: bold;">Temperature</MudTd>
+                            <MudTd DataLabel="Value">@context.Temperature</MudTd>
+                        </MudTr>
+                        <MudTr>
+                            <MudTd DataLabel="Field" style="font-weight: bold;">TIU</MudTd>
+                            <MudTd DataLabel="Value">@context.TIU</MudTd>
+                        </MudTr>
+                        <MudTr>
+                            <MudTd DataLabel="Field" style="font-weight: bold;">Socket File</MudTd>
+                            <MudTd DataLabel="Value">@context.SocketFile</MudTd>
+                        </MudTr>
+                        <MudTr>
+                            <MudTd DataLabel="Field" style="font-weight: bold;">Stpl File</MudTd>
+                            <MudTd DataLabel="Value">@context.StplFile</MudTd>
+                        </MudTr>
+                        <MudTr>
+                            <MudTd DataLabel="Field" style="font-weight: bold;">Env File</MudTd>
+                            <MudTd DataLabel="Value">@context.EnvFile</MudTd>
+                        </MudTr>
+                    }
+                </RowTemplate>
+            </MudTable>
+        </div>
+    }
+}
+
+@{
+    if (showFilterItuffProber == true)
+    {
+        <div class="gap-14">
+            <MudExpansionPanels Class="z-30 mb-4 spacing-bottom">
+                <MudExpansionPanel Text="Filter" @bind-IsExpanded="@isExpanded" Class="custom-expansion-panel">
+                    <TitleContent>
+                        <MudText><b>Filter</b></MudText>
+                    </TitleContent>
+                    <ChildContent>
+                        <MudGrid Spacing="2" Model="filterForm2" Class="">
+                            <MudItem xs="12" md="4" Class="">
+                                <MudTextField @bind-Value="filterForm2.Part" Label="Part" Variant="Variant.Filled" />
+                            </MudItem>
+                            <MudItem xs="12" md="4" Class="">
+                                <MudTextField @bind-Value="filterForm2.Sum" Label="SUM" Variant="Variant.Filled" />
+                            </MudItem>
+                            <MudItem xs="12" md="4" Class="">
+                                <MudTextField @bind-Value="filterForm2.VisualID" Label="Visual ID" Variant="Variant.Filled" />
+                            </MudItem>
+                            <MudItem xs="12" md="4" Class="">
+                                <MudSelect T="string" @ref="unitTiuSelect" @bind-Value="filteredUnitTiu" Label="Unit Tiu Multi-Select" Variant="Variant.Filled" MultiSelection="true" OnClearButtonClick="() => RefreshFilter2()" Clearable>
+                                    @foreach (var units in unitdataList.Select(u => u.UnitTiu).Distinct())
+                                    {
+                                        <MudSelectItem Value="@units">@units</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="4" Class="">
+                                <MudSelect T="string" @ref="binSelect" @bind-Value="filteredBins" Label="Bin By Multi-Select" Variant="Variant.Filled" MultiSelection="true" OnClearButtonClick="() => RefreshFilter2()" Clearable>
+                                    @foreach (var bin in unitdataList.Select(u => u.Bin).Distinct().OrderBy(b => b))
+                                    {
+                                        <MudSelectItem Value="@bin">@bin</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="1" Class="align-center">
+                                <MudIconButton Icon="@Icons.Material.Filled.Search" OnClick="ApplyFilters" Disabled="@_processing" contextmenu="User" Color="MudBlazor.Color.Inherit">
+                                    @if (_processing)
+                                    {
+                                        <MudProgressCircular Class="ms-n1" Indeterminate="true" />
+                                        <MudText Class="ms-2">Processing</MudText>
+                                    }
+                                    else
+                                    {
+                                        <MudText>Please click Search Icon button again!</MudText>
+                                    }
+                                </MudIconButton>
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="ClearSelections" contextmenu="User" Color="MudBlazor.Color.Inherit"></MudIconButton>
+                            </MudItem>
+                        </MudGrid>
+                    </ChildContent>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+        </div>
+    }
+    if (showFilterTIUProber == true)
+    {
+        <div class="gap-14">
+            <MudExpansionPanels Class="z-30 mb-4 spacing-bottom">
+                <MudExpansionPanel Text="Filter" @bind-IsExpanded="@isExpandedTIU" Class="custom-expansion-panel">
+                    <TitleContent>
+                        <MudText><b>Filter</b></MudText>
+                    </TitleContent>
+                    <ChildContent>
+                        <MudGrid Spacing="2" Model="filterForm2" Class="">
+                            <MudItem xs="12" md="4" Class="">
+                                <MudTextField @bind-Value="filterForm2.Part" Label="Part" Variant="Variant.Filled" />
+                            </MudItem>
+                            <MudItem xs="12" md="4" Class="">
+                                <MudTextField @bind-Value="filterForm2.Sum" Label="SUM" Variant="Variant.Filled" />
+                            </MudItem>
+                            <MudItem xs="12" md="4" Class="">
+                                <MudTextField @bind-Value="filterForm2.VisualID" Label="Visual ID" Variant="Variant.Filled" />
+                            </MudItem>
+                            <MudItem xs="12" md="4" Class="">
+                                <MudSelect T="string" @ref="binSelect" @bind-Value="filteredBins" Label="Bin By Multi-Select" Variant="Variant.Filled" MultiSelection="true" OnClearButtonClick="() => RefreshFilter2()" Clearable>
+                                    @foreach (var bin in unitdataList.Select(u => u.Bin).Distinct().OrderBy(b => b))
+                                    {
+                                        <MudSelectItem Value="@bin">@bin</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="1" Class="align-center">
+                                <MudIconButton Icon="@Icons.Material.Filled.Search" OnClick="ApplyFilters2" Disabled="@_processing" contextmenu="User" Color="MudBlazor.Color.Inherit">
+                                    @if (_processing)
+                                    {
+                                        <MudProgressCircular Class="ms-n1" Indeterminate="true" />
+                                        <MudText Class="ms-2">Processing</MudText>
+                                    }
+                                    else
+                                    {
+                                        <MudText>Please click Search Icon button again!</MudText>
+                                    }
+                                </MudIconButton>
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="ClearSelections2" contextmenu="User" Color="MudBlazor.Color.Inherit"></MudIconButton>
+                            </MudItem>
+                        </MudGrid>
+                    </ChildContent>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+        </div>
+    }
+}
+
+@* Display the loading progress in linear, once the Search Icon button is clicked and done processed *@
+@if (isLoadingDataTable)
+{
+    <MudProgressLinear Indeterminate="true" Class="my-7" />
+}
+
+@* Display the Unit Data output once is done processed the showResult should have value true *@
+@{
+    if (showResult == true)
+    {
+        @*Search Box for MudTable Unit Data but not working prorperly due to List issue*@
+        @*<MudTextField @bind-Value="searchQuery" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="MudBlazor.Size.Medium" Class="mb-4" Clearable="true" OnClearButtonClick="ClearSearch"></MudTextField> *@
+
+        <MudTable Fixed="true" T="UnitDataContent" Items="@unitdataList" FixedHeader="true" FixedFooter="true" Hover="true" Class="tiu-pin-table spacing-top" SortLabel="Sort By" Filterable="true">
+            <HeaderContent>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.Part)">Part</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.Sum)">SUM</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.VisualID)">Visual ID</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.Ult)">ULT</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.UnitTiu)">Unit TIU</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.Bin)">Bin</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.ItuffSocket)">ITUFF Socket</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.EightDigitBin)">8 Digit Bin</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.TesterChannel)">Tester Channel</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.Measure)">Measure</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.Name)">Name</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.Package)">Package</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.TestName)">Test Name</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.Pattern)">Pattern</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.Vector)">Vector</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.Cycle)">Cycle</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.TiuName)">TIU Name</MudTableSortLabel>
+                </MudTh>
+                @*<MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.Part))">Part</MudTh>
+                <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.Sum))">SUM</MudTh>
+                <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.VisualID))">Visual ID</MudTh>
+                <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.Ult))">ULT</MudTh>
+                <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.UnitTiu))">Unit TIU</MudTh>
+                <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.Bin))">Bin</MudTh>
+                <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.ItuffSocket))">ITUFF Socket</MudTh>
+                <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.EightDigitBin))">8 Digit Bin</MudTh>
+                <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.TesterChannel))">Tester Channel</MudTh>
+                <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.Measure))">Measure</MudTh>
+                <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.Name))">Name</MudTh>
+                <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.Package))">Package</MudTh>
+                <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.TestName))">Test Name</MudTh>
+                <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.Pattern))">Pattern</MudTh>
+                <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.Vector))">Vector</MudTh>
+                <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.Cycle))">Cycle</MudTh>
+                <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.TiuName))">TIU Name</MudTh>*@
+            </HeaderContent>
+            <RowTemplate Context="context">
+                <MudTd DataLabel="Part">@context.Part</MudTd>
+                <MudTd DataLabel="SUM">@context.Sum</MudTd>
+                <MudTd DataLabel="Visual ID">@context.VisualID</MudTd>
+                <MudTd DataLabel="ULT">@context.Ult</MudTd>
+                <MudTd DataLabel="Unit TIU">
+                    <MudLink Href="@($"tiupinmap?part={context.Part}&unitTiu={context.UnitTiu}&site={filteredSite}&lotID={filterForm.LotNumber}&operationID={filterForm.Operation}&summaryName={filterForm.Summary}")" Target="_blank">
+                        @context.UnitTiu
+                    </MudLink>
+                </MudTd>
+                <MudTd DataLabel="Bin">@context.Bin</MudTd>
+                <MudTd DataLabel="ITUFF Socket">@context.ItuffSocket</MudTd>
+                <MudTd DataLabel="8 Digit Bin">@context.EightDigitBin</MudTd>
+                <MudTd DataLabel="Tester Channel">@context.TesterChannel</MudTd>
+                <MudTd DataLabel="Measure">@context.Measure</MudTd>
+                <MudTd DataLabel="Name">@context.Name</MudTd>
+                <MudTd DataLabel="Package">@context.Package</MudTd>
+                <MudTd DataLabel="Test Name">@context.TestName</MudTd>
+                <MudTd DataLabel="Pattern">@context.Pattern</MudTd>
+                <MudTd DataLabel="Vector">@context.Vector</MudTd>
+                <MudTd DataLabel="Cycle">@context.Cycle</MudTd>
+                <MudTd DataLabel="TIU Name">@context.TiuName</MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 10, 25, 50, 100, int.MaxValue }" />
+            </PagerContent>
+        </MudTable>
+    }
+
+    if (showResultFilter2 == true)
+    {
+
+        <MudTable Fixed="true" T="UnitDataContent" Items="@FilteredUnitDataList" FixedHeader="true" FixedFooter="true" Hover="true" Class="tiu-pin-table" SortLabel="Sort By">
+            <HeaderContent>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.Part)">Part</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.Sum)">SUM</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.VisualID)">Visual ID</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.Ult)">ULT</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.UnitTiu)">Unit TIU</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.Bin)">Bin</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.ItuffSocket)">ITUFF Socket</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.EightDigitBin)">8 Digit Bin</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.TesterChannel)">Tester Channel</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.Measure)">Measure</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.Name)">Name</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.Package)">Package</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.TestName)">Test Name</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.Pattern)">Pattern</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.Vector)">Vector</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.Cycle)">Cycle</MudTableSortLabel>
+                </MudTh>
+                <MudTh Class="tiu-pin-table-header">
+                    <MudTableSortLabel SortBy="new Func<UnitDataContent, object>(x=>x.TiuName)">TIU Name</MudTableSortLabel>
+                </MudTh>
+                @*<MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.Part))">Part</MudTh>
+            <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.Sum))">SUM</MudTh>
+            <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.VisualID))">Visual ID</MudTh>
+            <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.Ult))">ULT</MudTh>
+            <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.UnitTiu))">Unit TIU</MudTh>
+            <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.Bin))">Bin</MudTh>
+            <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.ItuffSocket))">ITUFF Socket</MudTh>
+            <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.EightDigitBin))">8 Digit Bin</MudTh>
+            <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.TesterChannel))">Tester Channel</MudTh>
+            <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.Measure))">Measure</MudTh>
+            <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.Name))">Name</MudTh>
+            <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.Package))">Package</MudTh>
+            <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.TestName))">Test Name</MudTh>
+            <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.Pattern))">Pattern</MudTh>
+            <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.Vector))">Vector</MudTh>
+            <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.Cycle))">Cycle</MudTh>
+            <MudTh Class="tiu-pin-table-header" ondblclick="() => SortBy(nameof(UnitDataContent.TiuName))">TIU Name</MudTh>*@
+            </HeaderContent>
+            <RowTemplate Context="context">
+                <MudTd DataLabel="Part">@context.Part</MudTd>
+                <MudTd DataLabel="SUM">@context.Sum</MudTd>
+                <MudTd DataLabel="Visual ID">@context.VisualID</MudTd>
+                <MudTd DataLabel="ULT">@context.Ult</MudTd>
+                <MudTd DataLabel="Unit TIU">
+                    <MudLink Href="@($"tiupinmap?part={context.Part}&unitTiu={context.UnitTiu}&lotID={filterForm.LotNumber}&operationID={filterForm.Operation}&summaryName={filterForm.Summary}")" Target="_blank">
+                        @context.UnitTiu
+                    </MudLink>
+                </MudTd>
+                <MudTd DataLabel="Bin">@context.Bin</MudTd>
+                <MudTd DataLabel="ITUFF Socket">@context.ItuffSocket</MudTd>
+                <MudTd DataLabel="8 Digit Bin">@context.EightDigitBin</MudTd>
+                <MudTd DataLabel="Tester Channel">@context.TesterChannel</MudTd>
+                <MudTd DataLabel="Measure">@context.Measure</MudTd>
+                <MudTd DataLabel="Name">@context.Name</MudTd>
+                <MudTd DataLabel="Package">@context.Package</MudTd>
+                <MudTd DataLabel="Test Name">@context.TestName</MudTd>
+                <MudTd DataLabel="Pattern">@context.Pattern</MudTd>
+                <MudTd DataLabel="Vector">@context.Vector</MudTd>
+                <MudTd DataLabel="Cycle">@context.Cycle</MudTd>
+                <MudTd DataLabel="TIU Name">@context.TiuName</MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[] { 10, 25, 50, 100, int.MaxValue }" />
+            </PagerContent>
+        </MudTable>
+    }
+
+
+
+    @* Display the SVG output of particular TIU that user hover *@
+    <MudOverlay @bind-Visible="@_isSvgOverlayVisible" Position="Center">
+        <MudCard Elevation="5" Style="width: 600px; height: 400px;">
+            <MudCardHeader>
+                <MudText Typo="Typo.h6">TIU Pin Map: @_svgPopupElement.UnitTiu</MudText>
+            </MudCardHeader>
+            <MudCardContent>
+                <img src="@_svgImageUrl" alt="TIU Schematic Image" style="width: 100%; height: auto;" />
+            </MudCardContent>
+        </MudCard>
+    </MudOverlay>
+
+}
+
+@* Till here^ is the end of the MudBlazor components for the UI *@
+
+<script>
+    function downloadFile(dataUrl, fileName) {
+    var a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    }
+</script>
+
+<style>
+    .custom-expansion-panel {
+    /* background-color: black; */
+    /* color: white; */ /* Make text visible on black background */
+    }
+    .tiu-pin-table-header {
+    background-color: rgb(72,76,92);
+    color: white;
+    font-size: 1.1rem; /* Make font size for HeaderData bit bigger */
+    font-weight: bold; 
+    text-align: center; 
+    }
+
+    .tiu-pin-table {
+    color: white; 
+    /* background-color: rgb(32,28,28); */
+    text-align: center; 
+    font-weight: bold; 
+    }
+
+    .button-container {
+    display: flex;
+    justify-content: flex-end; 
+    margin-top: 16px; 
+    }
+
+    .spacing-top {
+    margin-top: 20px; 
+    }
+
+    .spacing-bottom {
+    margin-bottom: 20px; 
+    }
+
+    .spacing-between {
+    margin: 20px 0; 
+    }
+
+    .announcement-banner {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 5px;
+    background-color: #f5f5f5;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-top: 10px; 
+    }
+
+    .banner-paper {
+    width: 100%;
+    max-width: none; 
+    padding: 20px; 
+    text-align: center; 
+    }
+
+    .text-center {
+    margin: 0;
+    }
+
+</style>
+
+@* Below here is starting of the @code block of C# code *@
+@code {
+
+    private MudSelect<string> siteSelect;
+    private MudSelect<string> unitTiuSelect;
+    private MudSelect<string> binSelect;
+
+    private bool _processing = false;
+    private bool isSearchDisabled = false;
+    private bool isSearchDisabledTIU = false;
+    public bool isLoadingSummary = false;
+    public bool isLoading = false;
+    public bool isLoadingDataTable = false;
+    public bool isLoadingTIU = false;
+    private bool isExpanded = false;
+    private bool isExpandedTIU = false;
+    private bool showResult = false;
+    private bool showResultFilter2 = false;
+    private bool showFilterItuffProber = false;
+    private bool showFilter3 = false;
+    private bool showFilterTIUProber = false;
+    private bool showHeader = false;
+    public string errorMessage = string.Empty;
+    private bool showExportButton = false;
+    private bool showExportButtonTIUQuery = false;
+    private bool summaryEnabled = false;
+    private bool searchbuttonEnabled = false;
+    private List<string> summaries = new List<string>();
+    // public IMask maskoperation = new RegexMask(@"^[1-9]\d{0,3}$");
+    public IMask masktiu = new RegexMask(@"^\p{L}{0,29}$");
+    private string currentSortColumn;
+    private bool ascending = true;
+    private string searchQuery = string.Empty;
+
+
+    private bool _isSvgOverlayVisible = false;
+    private UnitDataContent _svgPopupElement = new UnitDataContent();
+    private string _svgImageUrl = string.Empty;
+
+    private bool _isVisible = true;
+
+    private void CloseBanner()
+    {
+        _isVisible = false;
+    }
+
+
+    // The ITUFF Prober Query a.k.a MudExpansionPanel component to expand
+    private void TogglePanel()
+    {
+        isExpanded = !isExpanded;
+        isExpandedTIU = !isExpandedTIU;
+        // if(!isExpanded)
+        // {
+        //     isExpandedTIU = false;
+        // }
+        // isExpanded = !isExpanded;
+        // StateHasChanged();
+    }
+
+    private void OnFirstPanelToggle(bool expanded)
+    {
+        isExpanded = expanded;
+        if (expanded)
+        {
+            isExpandedTIU = false; // Close the second panel when first opens
+        }
+        StateHasChanged();
+    }
+
+    private void OnSecondPanelToggle(bool expanded)
+    {
+        isExpandedTIU = expanded;
+        if (expanded)
+        {
+            isExpanded = false; // Close the first panel when second opens
+        }
+        StateHasChanged();
+    }
+
+    private bool _isPopupVisible = false;
+    public UnitDataContent _popupElement = new UnitDataContent();
+    //private System.Drawing.Point _popupPosition;
+    //private int _popupOffset = 10;
+
+    public void ShowPopupCard(UnitDataContent element)
+    {
+        _popupElement = element;
+        _isPopupVisible = true;
+        // _popupPosition = new System.Drawing.Point { X = 0, Y = 0 }; // Calculate the exact position based on the mouse position
+    }
+
+    public void HidePopupCard()
+    {
+        _isPopupVisible = false;
+    }
+
+    public void ToggleSvgOverlay(UnitDataContent element)
+    {
+        if (_svgPopupElement == element && _isSvgOverlayVisible)
+        {
+            HideSvgOverlay();
+        }
+        else
+        {
+            ShowSvgOverlay();
+        }
+    }
+
+    public bool visibleSVG;
+
+    public void ToggleOverlay(bool value)
+    {
+        visibleSVG = value;
+        if (visibleSVG == true)
+        {
+            ShowSvgOverlay();
+
+        }
+        if (visibleSVG == false)
+        {
+            //HideSvgOverlay();
+            visibleSVG = false;
+            _isSvgOverlayVisible = false;
+            _svgPopupElement = new UnitDataContent(); // Reset the element to ensure the button text updates correctly
+        }
+    }
+
+    public void ShowSvgOverlay()
+    {
+        //element = new UnitDataContent();
+        //_svgPopupElement = element;
+        _svgImageUrl = $"SVG is display"; // Update this path to the actual location of your SVG images
+        _isSvgOverlayVisible = true;
+    }
+
+    public void HideSvgOverlay()
+    {
+        _isSvgOverlayVisible = false;
+        _svgPopupElement = new UnitDataContent(); // Reset the element to ensure the button text updates correctly
+    }
+
+    // For testing passing data hardcoded when Console Writeline can't be use for UI
+    private string lotnumber_;
+    private string variableValue;
+
+    // For masking the the TIU input, but no longer use for now
+    public PatternMask maskunitiu = new PatternMask("XXXXXXXXXXXX:XXXXXXXXXXXX")
+        {
+            MaskChars = new[] { new MaskChar('X', @"[0-9a-zA-Z]") },
+            Placeholder = '_',
+            CleanDelimiters = true,
+            Transformation = AllUpperCase
+        };
+
+    // Transform lower-case chars into upper-case chars
+    private static char AllUpperCase(char c) => c.ToString().ToUpperInvariant()[0];
+
+    public List<string> siteList = new List<string> { "", "ATD", "PG", "KM", "SS", "CD", "CR", "PG12", "IDC", "JF" };
+
+    // Create filter object instance
+    private Filter filter = new Filter();
+
+    // Create class of Filter
+    public class Filter
+    {
+        public string Product { get; set; } = string.Empty;
+        public string Tester { get; set; } = string.Empty;
+        public string LotNumber { get; set; } = string.Empty;
+        public string Operation { get; set; } = string.Empty;
+        public string Summary { get; set; } = string.Empty;
+        public string TIUID { get; set; } = string.Empty;
+        public string Bin { get; set; } = string.Empty;
+        public string Site { get; set; } = string.Empty;
+    }
+
+
+    // Create filterOptions object instance
+    FilterForm filterForm = new FilterForm();
+    FilterFormTIU filterFormTIU = new FilterFormTIU();
+
+    // Create class of FilterOptions
+    public class FilterForm
+    {
+
+        // public string Product { get; set; } = string.Empty;
+
+        // public string Tester { get; set; } = string.Empty;
+
+        // [Required]
+        public string LotNumber { get; set; } = string.Empty;
+
+        // [Required]
+        public string Operation { get; set; } = string.Empty;
+
+        // [Required]
+        public string Summary { get; set; } = string.Empty;
+
+        // [Required]
+        // public string TIUID { get; set; } = string.Empty;
+        // public string BinSelect { get; set; } = string.Empty;
+
+        // [Required]
+        // public string Site { get; set; } = string.Empty;
+
+        // public string ReadOnly { get; set; } = "Test Checking 2";
+    }
+
+    // Create class of FilterOptions
+    public class FilterFormTIU
+    {
+        public string TIUNumber { get; set; } = string.Empty;
+        [Range(1, 365, ErrorMessage = "Number of days must be between 1 and 365")]
+        public int NumberOfDays { get; set; } = 7; // Default to 7 days
+    }
+    public SummaryData summaryData = new SummaryData()
+        {
+            Summary = string.Empty,
+        };
+
+    public List<SummaryData> summaryDataList = new List<SummaryData> { };
+
+    public class SummaryData
+    {
+        public string Summary { get; set; } = string.Empty;
+    }
+
+    public HeaderData headerData = new HeaderData()
+        {
+            Program = string.Empty,
+            Product = string.Empty,
+            Package = string.Empty,
+        // Step = = string.Empty,
+            Tester = string.Empty,
+            Temperature = string.Empty,
+            TIU = string.Empty,
+            SocketFile = string.Empty,
+            StplFile = string.Empty,
+            EnvFile = string.Empty,
+        // PinfinderTable = string.Empty,
+        // Warning = string.Empty,
+        };
+
+    public List<HeaderData> headerdataList = new List<HeaderData> { };
+
+    public class HeaderData
+    {
+        public string Program { get; set; } = string.Empty;
+        public string Product { get; set; } = string.Empty;
+        public string Package { get; set; } = string.Empty;
+        // public string Step { get; set; } = string.Empty;
+        public string Tester { get; set; } = string.Empty;
+        public string Temperature { get; set; } = string.Empty;
+        public string TIU { get; set; } = string.Empty;
+        public string SocketFile { get; set; } = string.Empty;
+        public string StplFile { get; set; } = string.Empty;
+        public string EnvFile { get; set; } = string.Empty;
+        // public string PinfinderTable { get; set; } = string.Empty;
+        // public string Warning { get; set; } = string.Empty;
+    }
+
+    public List<UnitDataContent> unitdataList = new List<UnitDataContent> { };
+    // private List<UnitDataContent> unitdataList2 = new List<UnitDataContent>();
+
+
+    private UnitDataContent unitData = new UnitDataContent();
+
+    public class UnitDataContent
+    {
+        public string Part { get; set; } = string.Empty;
+        public string Sum { get; set; } = string.Empty;
+        public string VisualID { get; set; } = string.Empty;
+        public string Ult { get; set; } = string.Empty;
+        public string UnitTiu { get; set; } = string.Empty;
+        public string Bin { get; set; } = string.Empty;
+        public string ItuffSocket { get; set; } = string.Empty;
+        public string EightDigitBin { get; set; } = string.Empty;
+        public string TesterChannel { get; set; } = string.Empty;
+        public string Measure { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Package { get; set; } = string.Empty;
+        public string TestName { get; set; } = string.Empty;
+        public string Pattern { get; set; } = string.Empty;
+        public string Vector { get; set; } = string.Empty;
+        public string Cycle { get; set; } = string.Empty;
+        public string TiuName { get; set; } = string.Empty;
+        public string Actions { get; set; } = string.Empty;
+
+    }
+
+    // Public class for Combined UnitData
+    public class CombinedUnitData
+    {
+        public string Site { get; set; } = string.Empty;
+        public string TiuID { get; set; } = string.Empty;
+        public string SUM { get; set; } = string.Empty;
+        public string Fbin { get; set; } = string.Empty;
+        public string VisualID { get; set; } = string.Empty;
+        public string Connector { get; set; } = string.Empty;
+        public string PinName { get; set; } = string.Empty;
+        public string Count { get; set; } = string.Empty;
+
+    }
+
+    // Create filterOptions object instance
+    public static string filteredPart = string.Empty;
+    public static string filteredSUM = string.Empty;
+    public static string filteredVisualID = string.Empty;
+    public static string filteredBins = string.Empty;
+    public static string filteredUnitTiu = string.Empty;
+    public static string filteredSite = string.Empty;
+    FilterForm2 filterForm2 = new FilterForm2();
+    // Create class of FilterOptions
+    public class FilterForm2
+    {
+        public string LotNumber { get; set; } = string.Empty;
+        public string Operation { get; set; } = string.Empty;
+        public string Summary { get; set; } = string.Empty;
+        public string Part { get; set; } = string.Empty;
+        public string Sum { get; set; } = string.Empty;
+        public string VisualID { get; set; } = string.Empty;
+        public string Ult { get; set; } = string.Empty;
+        public string UnitTiu { get; set; } = string.Empty;
+        public List<string> UnitTius { get; set; } = new List<string>();
+        public string Bin { get; set; } = string.Empty;
+        public List<string> Bins { get; set; } = new List<string>();
+        public string ItuffSocket { get; set; } = string.Empty;
+        public string EightDigitBin { get; set; } = string.Empty;
+        public string TesterChannel { get; set; } = string.Empty;
+        public string Measure { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Package { get; set; } = string.Empty;
+        public string TestName { get; set; } = string.Empty;
+        public string Pattern { get; set; } = string.Empty;
+        public string Vector { get; set; } = string.Empty;
+        public string Cycle { get; set; } = string.Empty;
+        public string TiuName { get; set; } = string.Empty;
+    }
+
+    public class SvgData
+    {
+        public string Connector { get; set; } = string.Empty;
+        public string X_ { get; set; } = string.Empty;
+        public string Y_ { get; set; } = string.Empty;
+    }
+    private void SortBy(string columnName)
+    {
+        if (currentSortColumn == columnName)
+        {
+            ascending = !ascending; // Toggle sort direction
+        }
+        else
+        {
+            currentSortColumn = columnName;
+            ascending = true; // Default to ascending when changing columns
+        }
+
+        unitdataList = ascending
+            ? unitdataList.OrderBy(x => GetPropertyValue(x, columnName)).ToList()
+            : unitdataList.OrderByDescending(x => GetPropertyValue(x, columnName)).ToList();
+    }
+
+    private object GetPropertyValue(UnitDataContent item, string propertyName)
+    {
+        return typeof(UnitDataContent).GetProperty(propertyName).GetValue(item, null);
+    }
+
+    // Button Search Filter
+    async Task SearchTest()
+    {
+        // Set the flag to true to disable the 2nd MudSearch button
+        isSearchDisabled = true;
+
+        //await JS.InvokeVoidAsync("logToConsole", "Button clicked!");
+        headerdataList.Clear();
+        _processing = true;
+        await Task.Delay(500);
+
+        isLoading = true;
+        StateHasChanged();
+
+        string site = filteredSite;
+        string lotNumber = filterForm.LotNumber;
+        //lotnumber_ = lotNumber;
+        string operation = filterForm.Operation;
+        string summary = filterForm.Summary;
+
+        Console.WriteLine("Checking Site:" + site + " Lot Number:" + lotNumber + " Operation:" + operation + " Summary:" + summary);
+
+        //ValidateLotNumberOperationSummary(lotnumber, operation, summary);
+        //ValidateLotNumberOperationSummary(filterForm.LotNumber, filterForm.Operation, filterForm.Summary);
+
+        // Pass lotnumber, operation and summary to request and get reply
+        var requestHeader = ItuffController.GetHeaderData(lotNumber, operation, summary);
+        var requestUnitData = ItuffController.GetUnitData(lotNumber, operation, summary, site);
+
+        // variableValue = requestHeader.Result.HeaderList[0].Prgnm.ToString();
+
+        // HeaderData list to hold HeaderList reply
+        // var headerdataList = new List<HeaderData>();
+
+        if (requestHeader.Result?.HeaderList != null && requestUnitData.Result?.Units != null) // If response of request not null for both
+        {
+            if (requestHeader.Result?.HeaderList != null) //If response of request not null for Header
+            {
+                foreach (var header in requestHeader.Result.HeaderList)
+                {
+                    var headerData_ = new HeaderData
+                        {
+                            Program = header.Prgnm,
+                            Product = header.Prdct,
+                            Package = header.Packg,
+                        //Step = header.
+                            Tester = header.TesterType,
+                            Temperature = header.Tempr,
+                            TIU = header.Ldbid,
+                            SocketFile = header.Soc,
+                            StplFile = header.Stpl,
+                            EnvFile = header.Env,
+                        //headerData.PinfinderTable = header.
+                        //headerData.Warning = header.
+                        };
+                    headerdataList.Add(headerData_);
+                    //Console.Log(headerdataList); // Print Console.log
+                    //await JS.InvokeVoidAsync("console.log",headerdataList);
+
+
+                }
+
+                //PopulateTableData();
+                showHeader = true;
+            }
+            if (requestUnitData.Result?.Units != null)
+            {
+
+                //var unitdataList = new List<UnitDataContent>();
+
+                foreach (var unit in requestUnitData.Result.Units)
+                {
+
+                    foreach (var test in unit.Value.Tests) // 1 unit can hv multiple tests, need to loop & check test of each 1 unit.
+                    {
+                        var combinedData = new UnitDataContent
+                            {
+                                Part = unit.Value.ProductNum,
+                                Sum = unit.Value.Sum,
+                                VisualID = unit.Value.VisualId,
+                                Ult = unit.Value.Ult,
+                                UnitTiu = unit.Value.TiuId,
+                                Bin = unit.Value.Fbin,
+                                ItuffSocket = unit.Value.Site,
+                                EightDigitBin = unit.Value.EBin,
+                                TesterChannel = test.Channel,
+                                Measure = test.Measure,
+                                Name = test.PinName,
+                                Package = test.Connector,
+                                TestName = test.Tname,
+                                Pattern = test.FailPattern,
+                                Vector = test.FailVector,
+                                Cycle = test.FailCycle,
+                                TiuName = test.TiuPinName,
+                            };
+                        unitdataList.Add(combinedData);
+                        //Console.Log(unitdataList); // Print Console.log
+                        //await JS.InvokeVoidAsync("console.log", unitdataList);
+
+                    }
+                }
+                showExportButton = true;
+                showExportButtonTIUQuery = false;
+                showResult = true;
+                showFilterItuffProber = true;
+            }
+
+        }
+        else
+        {
+            errorMessage = "Your query data is not exist";
+            showResult = false;
+            _processing = false;
+            isLoading = false;
+            isLoadingDataTable = false;
+        }
+        _processing = false;
+        isLoading = false;
+        isLoadingDataTable = false;
+        //StateHasChanged();
+    }
+    private async Task SummaryButtonClick()
+    {
+
+        await Task.Delay(1000);
+        isLoadingSummary = true;
+        StateHasChanged();
+
+        await ValidateLotNumberOperation();
+        isLoadingSummary = false;
+
+    }
+    // Function to check Lot & Operation existance
+    private async Task ValidateLotNumberOperation()
+    {
+        errorMessage = string.Empty;
+
+        string site = filteredSite;
+        string lotID = filterForm.LotNumber;
+        string operation = filterForm.Operation;
+        // string Summary = filterForm.Summary;
+
+        // // Request Lot, operation and Summary to QueryController to get reply to validate existance
+        // var requestHeader = ItuffController.GetHeaderData(lotID, operation, Summary);
+        //var requestUnitData = ItuffController.GetUnitData(lotID, operation, Summary);
+
+        // foreach (var responseHeader in requestHeader.Result.HeaderList)
+        // {
+        //     if (responseHeader.LotId == lotID && responseHeader.Lcode == operation)
+        //     {
+        //         errorMessage = string.Empty;
+        //         summaries.Add(responseHeader.Smrynam);
+        //         //back to SearchFilter button
+        //         break;
+        //     }
+        //     else
+        //     {
+        //         if (responseHeader.LotId != lotID && responseHeader.Lcode != operation)
+        //         {
+        //             errorMessage = "Lot Number, operation does not exist. Summary not able to fetch";
+        //             summaries.Clear(); // Make sure summaries do not hv any data
+        //             summaryEnabled = false;
+        //             showResult = false;
+        //             break;
+        //         }
+        //         if (responseHeader.LotId == lotID && responseHeader.Lcode != operation)
+        //         {
+        //             errorMessage = "Lot Number is exist but operation is incorrect. Unable to fetch the Summary";
+        //             summaries.Clear(); // Make sure summaries do not hv any data
+        //             summaryEnabled = false;
+        //             showResult = false;
+        //             break;
+        //         }
+        //     }
+        // }
+        //StateHasChanged();
+
+        var requestSummary = ItuffController.GetSummaryData(lotID, operation);
+
+        if (requestSummary.Result?.SummaryList != null && requestSummary.Result?.SummaryList.Count > 0)
+        {
+            // The list is not empty, so you can proceed with your logic
+            foreach (var summary in requestSummary.Result?.SummaryList)
+            {
+                errorMessage = string.Empty;
+                summaries.Add(summary.Summary.ToString());
+            }
+            summaries = summaries.Distinct().ToList();
+        }
+        else
+        {
+            // The list is empty or null
+            errorMessage = "Unable to fetch the Summary. The lot or operation might be incorrect or missing";
+            summaries.Clear(); // Make sure summaries do not hv any data
+            showResult = false;
+        }
+
+        var requestSite = ItuffController.GetSiteData(lotID, operation, site);
+
+        if (requestSite.Result?.LotList != null && requestSite.Result.LotList.Count > 0)
+        {
+            // The list is not empty, so you can proceed with your logic
+            foreach (var lot in requestSite.Result.LotList)
+            {
+                // Reset errorMessage if needed
+                errorMessage = string.Empty;
+            }
+        }
+        else
+        {
+            if (string.IsNullOrEmpty(errorMessage))
+            {
+                // The list is empty or null, or there is an error message
+                errorMessage = "Lot Number and Operation can't be found within this site";
+                summaries.Clear(); // Make sure summaries do not hv any data
+                showResult = false;
+            }
+        }
+
+    }
+
+    // These comment is once uses for Way 4 of display the Header Unit data part
+    // private void PopulateTableData()
+    // {
+    //     var headerData = headerdataList.FirstOrDefault();
+    //     if (headerData != null)
+    //     {
+    //         tableData = new List<TableData>
+    //         {
+    //             new TableData { Field = "Program", Value = headerData.Program },
+    //             new TableData { Field = "Product", Value = headerData.Product },
+    //             new TableData { Field = "Package", Value = headerData.Package },
+    //             new TableData { Field = "Tester", Value = headerData.Tester },
+    //             new TableData { Field = "Temperature", Value = headerData.Temperature },
+    //             new TableData { Field = "TIU", Value = headerData.TIU },
+    //             new TableData { Field = "Socket File", Value = headerData.SocketFile },
+    //             new TableData { Field = "Stpl File", Value = headerData.StplFile },
+    //             new TableData { Field = "Env File", Value = headerData.EnvFile }
+    //         };
+    //     }
+    // }
+
+
+    // Method for Refresh Icon button - to clear all and empy the Header and Unit data lists
+    private void RefreshFilter()
+    {
+
+        // Set the flag to false to enable the MudSearch button
+        isSearchDisabled = false;
+        isSearchDisabledTIU = false;
+
+        Console.WriteLine("Refresh button clicked");
+        siteSelect.Clear();
+
+        // Assign the hardcoded value to these string
+        filteredSite = string.Empty;
+        filterForm.LotNumber = string.Empty;
+        filterForm.Operation = string.Empty;
+        filterForm.Summary = string.Empty;
+
+        // Create new instance to clear previous filterForm properties
+        filterForm = new FilterForm();
+        filter = new Filter();
+        filterForm = new FilterForm();
+        headerData = new HeaderData();
+        unitData = new UnitDataContent();
+
+        // Clear both Lists that holds value at the UI MudBlazor tables
+        headerdataList.Clear();
+        unitdataList.Clear();
+
+        // Hide display of MudPaper of Header Data and MudTable of Unit Data
+        showResult = false;
+        showFilterItuffProber = false;
+        showFilterTIUProber = false;
+
+        //Console.WriteLine($"Filter: Product input: {filterForm.Product}, Tester input: {filterForm.Tester}, Site input: {filterForm.Site}");
+        errorMessage = string.Empty;
+        summaryEnabled = false;
+        summaries.Clear();
+
+        showExportButton = false;
+        showExportButtonTIUQuery = false;
+    }
+
+    // Method for Refresh Icon button - to clear all and empy the Header and Unit data lists
+    private void RefreshTIUQuery()
+    {
+
+        // Set the flag to false to enable the MudSearch button
+        isSearchDisabled = false;
+        isSearchDisabledTIU =false;
+
+        Console.WriteLine("Refresh button clicked");
+        siteSelect.Clear();
+
+        // Assign the hardcoded value to these string
+        filteredSite = string.Empty;
+        filterFormTIU.TIUNumber = string.Empty;
+        filterFormTIU.NumberOfDays = 7; //reset put to 7 default
+
+
+        // Create new instance to clear previous filterForm properties
+        filterForm = new FilterForm();
+        filter = new Filter();
+        filterFormTIU = new FilterFormTIU();
+        unitData = new UnitDataContent();
+
+        // Clear both Lists that holds value at the UI MudBlazor tables
+        unitdataList.Clear();
+
+        // Hide display of MudPaper of Header Data and MudTable of Unit Data
+        showResult = false;
+        showFilterItuffProber = false;
+        showFilterTIUProber = false;
+
+
+        errorMessage = string.Empty;
+        showExportButton = false;
+        showExportButtonTIUQuery = false;
+    }
+
+    public IEnumerable<UnitDataContent> FilteredUnitDataList => unitdataList.Where(item =>
+    (string.IsNullOrEmpty(filterForm2.Part) || item.Part.Contains(filterForm2.Part, StringComparison.OrdinalIgnoreCase)) &&
+    (string.IsNullOrEmpty(filterForm2.Sum) || item.Sum.Contains(filterForm2.Sum, StringComparison.OrdinalIgnoreCase)) &&
+    (string.IsNullOrEmpty(filterForm2.VisualID) || item.VisualID.Contains(filterForm2.VisualID, StringComparison.OrdinalIgnoreCase)) &&
+    (filterForm2.Bins.Count == 0 || filterForm2.Bins.Any(bin => bin.Equals(item.Bin, StringComparison.OrdinalIgnoreCase))) &&
+    (filterForm2.UnitTius.Count == 0 || filterForm2.UnitTius.Any(unit => unit.Equals(item.UnitTiu, StringComparison.OrdinalIgnoreCase)))
+    );
+
+    private async Task ApplyFilters()
+    {
+        await Task.Delay(100);
+        isLoadingDataTable = true;
+        StateHasChanged();
+
+
+        showFilterItuffProber = true;
+        showFilter3 =false;
+        showFilterTIUProber = false;
+
+        showResult = false;
+        showResultFilter2 = true;
+        //filterForm2.Part = filteredPart;
+        //filterForm2.Sum = filteredSUM;
+        //filterForm2.VisualID = filteredVisualID;
+        var unittiuList = filteredUnitTiu.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(unit => unit.Trim()).ToList();
+        filterForm2.UnitTius = unittiuList;
+        var binList = filteredBins.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(bin => bin.Trim()).ToList();
+        filterForm2.Bins = binList;
+        await Task.Delay(100);
+        isLoadingDataTable = false;
+        StateHasChanged();
+    }
+
+    private async Task ApplyFilters2()
+    {
+        await Task.Delay(100);
+        isLoadingDataTable = true;
+        StateHasChanged();
+
+
+        showFilterItuffProber = false;
+        showFilter3 = false;
+
+        showResult = false;
+        showResultFilter2 = true;
+        //filterForm2.Part = filteredPart;
+        //filterForm2.Sum = filteredSUM;
+        //filterForm2.VisualID = filteredVisualID;
+        var unittiuList = filteredUnitTiu.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(unit => unit.Trim()).ToList();
+        filterForm2.UnitTius = unittiuList;
+        var binList = filteredBins.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(bin => bin.Trim()).ToList();
+        filterForm2.Bins = binList;
+        await Task.Delay(100);
+        isLoadingDataTable = false;
+        StateHasChanged();
+    }
+
+    private void ClearSelections()
+    {
+        unitTiuSelect.Clear();
+        binSelect.Clear();
+
+        // Reset
+        filterForm2.Part = string.Empty;
+        filterForm2.Sum = string.Empty;
+        filterForm2.VisualID = string.Empty;
+
+
+        StateHasChanged();
+
+        Console.WriteLine($"filteredUnitTiu: {string.Join(", ", filterForm2.UnitTius)}, filteredBins: {string.Join(", ", filterForm2.Bins)}");
+        Console.WriteLine($"filteredUnitTiu: {string.Join(", ", filteredUnitTiu)}, filteredBins: {string.Join(", ", filteredBins)}");
+
+        errorMessage = string.Empty;
+        showResultFilter2 = false;
+        showResult = true;
+        showHeader = true;
+        showFilter3 = true;
+
+
+        StateHasChanged();
+    }
+
+    private void ClearSelections2()
+    {
+        // Reset
+        binSelect.Clear();
+        filterForm2.Part = string.Empty;
+        filterForm2.Sum = string.Empty;
+        filterForm2.VisualID = string.Empty;
+
+        StateHasChanged();
+
+        errorMessage = string.Empty;
+        showResultFilter2 = false;
+        showFilterItuffProber = false;
+        showResult = true;
+        showHeader = true;
+        showFilter3 = true;
+        showFilterTIUProber = true;
+
+        StateHasChanged();
+    }
+
+    // public void RefreshFilter2(string Value1, string Value2)
+    // {
+    //     Console.WriteLine("RefreshFilter2 called");
+
+    //     Value1 = string.Empty;
+    //     Value2 = string.Empty;
+    //     //string filteredBins_ = Value2;
+    //     //filteredBins_ = string.Empty;
+
+    //     showFilterItuffProber = true;
+    //     filterForm2 = new FilterForm2();
+    //     filterForm2.Summary = string.Empty;
+    //     filterForm2.Part = string.Empty;
+    //     filterForm2.VisualID = string.Empty;
+    //     filterForm2.Bins.Clear();
+    //     filterForm2.UnitTius.Clear();
+
+    //     filteredPart = string.Empty;
+    //     filteredSUM = string.Empty;
+    //     filteredVisualID = string.Empty;
+    //     filteredUnitTiu = string.Empty;
+    //     filteredBins = string.Empty;
+    //     StateHasChanged();
+    //     // filteredUnitTiu.Clear();
+    //     // filteredBins.Clear();
+
+    //     Console.WriteLine($"filteredUnitTiu: {filteredUnitTiu}, filteredBins: {filteredBins}");
+
+    //     errorMessage = string.Empty;
+    //     showResultFilter2 = false;
+    //     showResult = true;
+    //     showHeader = true;
+    //     showFilter3 = true;
+
+
+    //     StateHasChanged();
+    // }
+
+    public void RefreshFilter2()
+    {
+        Console.WriteLine("RefreshFilter2 called");
+
+        // Clear the selections by setting the bound variables to empty lists
+        filteredUnitTiu = string.Empty;
+        filteredBins = string.Empty;
+
+        // Clear the lists in the filter form
+        filterForm2.Bins.Clear();
+
+        // Reset
+        filterForm2.Part = string.Empty;
+        filterForm2.Sum = string.Empty;
+        filterForm2.VisualID = string.Empty;
+
+
+        StateHasChanged();
+
+        Console.WriteLine($"filteredUnitTiu: {string.Join(", ", filterForm2.UnitTius)}, filteredBins: {string.Join(", ", filterForm2.Bins)}");
+        Console.WriteLine($"filteredUnitTiu: {string.Join(", ", filteredUnitTiu)}, filteredBins: {string.Join(", ", filteredBins)}");
+
+        errorMessage = string.Empty;
+        showResultFilter2 = false;
+        showResult = true;
+        showHeader = true;
+        showFilterItuffProber = false;
+        showFilter3 = true;
+
+
+        StateHasChanged();
+    }
+
+    // Button Search Filter
+    async Task SearchByTIU()
+    {
+        if ((filteredSite == string.Empty && filterFormTIU.TIUNumber != null) || (filteredSite != string.Empty && filterFormTIU.TIUNumber == null))
+        {
+            isSearchDisabledTIU = false;
+            errorMessage = "Input query is not complete, please check Site field or TIU Number field might not filled in, and Number of Days field.";
+            isLoading = false;
+            showExportButton = false;
+            showExportButtonTIUQuery = false;
+            showResult = false;
+        }
+        else //when both input field Site & Tiu Number is filled-in by user
+        {
+            // Set the flag to true to disable the MudSearch button
+            isSearchDisabledTIU = true;
+            errorMessage = string.Empty;
+            showExportButton = false;
+            showExportButtonTIUQuery = false;
+            showResult = false;
+
+            //await JS.InvokeVoidAsync("logToConsole", "Button clicked!");
+            headerdataList.Clear();
+            unitdataList.Clear();
+            showFilterItuffProber = false;
+            showFilterTIUProber = false;
+            _processing = true;
+            await Task.Delay(500);
+
+            isLoading = true;
+            StateHasChanged();
+
+            string site = filteredSite;
+            string tiu = filterFormTIU.TIUNumber;
+            uint dataNumberOfDay = (uint)filterFormTIU.NumberOfDays;
+
+            Console.WriteLine("Checking Site:" + site + " TIU Number:" + tiu + "Number of Days:" + dataNumberOfDay);
+
+            // Pass site and tiu number to request and get reply
+            var requestUnitDatabyTIU = ItuffController.GetTiuIdUnitData(tiu, site, dataNumberOfDay);
+
+            if (requestUnitDatabyTIU.Result?.Units != null) // If response of request not null
+            {
+                if (requestUnitDatabyTIU.Result?.Units != null)
+                {
+                    foreach (var unit in requestUnitDatabyTIU.Result.Units)
+                    {
+
+                        foreach (var test in unit.Value.Tests) // 1 unit can hv multiple tests, need to loop & check test of each 1 unit.
+                        {
+                            var combinedData = new UnitDataContent
+                                {
+                                    Part = unit.Value.ProductNum,
+                                    Sum = unit.Value.Sum,
+                                    VisualID = unit.Value.VisualId,
+                                    Ult = unit.Value.Ult,
+                                    UnitTiu = unit.Value.TiuId,
+                                    Bin = unit.Value.Fbin,
+                                    ItuffSocket = unit.Value.Site,
+                                    EightDigitBin = unit.Value.EBin,
+                                    TesterChannel = test.Channel,
+                                    Measure = test.Measure,
+                                    Name = test.PinName,
+                                    Package = test.Connector,
+                                    TestName = test.Tname,
+                                    Pattern = test.FailPattern,
+                                    Vector = test.FailVector,
+                                    Cycle = test.FailCycle,
+                                    TiuName = test.TiuPinName,
+                                };
+                            unitdataList.Add(combinedData);
+                            //Console.Log(unitdataList); // Print Console.log
+                            //await JS.InvokeVoidAsync("console.log", unitdataList);
+
+                        }
+                    }
+                    showResult = true;
+                    showFilterTIUProber = true; //Filters on top of the TIU Prober Query. this is without the TIU
+                    showFilterItuffProber = false; //Filters on top of the ITUFF Prober Query. this is whole filters. set to false
+                    showExportButton = false;
+                    showExportButtonTIUQuery = true;
+                }
+
+            }
+            else
+            {
+                errorMessage = "TIU query data is not exist. Please check your input query";
+                showResult = false;
+                _processing = false;
+                isLoading = false;
+                isLoadingDataTable = false;
+                showExportButton = false;
+                showExportButtonTIUQuery = false;
+            }
+            _processing = false;
+            isLoading = false;
+            isLoadingDataTable = false;
+            //StateHasChanged();
+        }
+
+    }
+
+
+
+    // Search Box for MudTable Unit Data but not working prorperly due to List issue
+    // private IEnumerable<UnitDataContent> searchallList => unitdataList.Where(p =>
+    //         string.IsNullOrEmpty(searchQuery) ||
+    //         (p.Part?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+    //         (p.Sum?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+    //         (p.VisualID?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+    //         (p.Ult?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+    //         (p.UnitTiu?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+    //         (p.Bin?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+    //         (p.ItuffSocket?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+    //         (p.EightDigitBin?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+    //         (p.TesterChannel?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+    //         (p.Measure?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+    //         (p.Name?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+    //         (p.Package?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+    //         (p.TestName?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+    //         (p.Pattern?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+    //         (p.Vector?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+    //         (p.Cycle?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false) ||
+    //         (p.TiuName?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false)
+    //     );
+
+    // private void ClearSearch()
+    // {
+    //     searchQuery = string.Empty;
+    // }
+
+    // To get data of both headerdataList and unitdataList and convert to csv
+    private string ConvertToCsv<T>(IEnumerable<T> data)
+    {
+        var properties = typeof(T).GetProperties();
+        var csvBuilder = new StringBuilder();
+
+        // Add header line
+        csvBuilder.AppendLine(string.Join(",", properties.Select(p => p.Name)));
+
+        // Add data lines
+        foreach (var item in data)
+        {
+            var values = properties.Select(p => p.GetValue(item, null)?.ToString() ?? string.Empty);
+            csvBuilder.AppendLine(string.Join(",", values));
+        }
+
+        return csvBuilder.ToString();
+    }
+
+    // To export data of both lists
+    private async Task ExportData()
+    {
+        try
+        {
+            showExportButton = true;
+            showExportButtonTIUQuery = false;
+
+            // Convert HeaderData to CSV first (complete list)
+            var headerCsv = ConvertToCsv(headerdataList);
+
+            // Convert UnitDataContent to CSV (complete list, not filtered)
+            var unitDataCsv = ConvertToCsv(unitdataList);
+
+            // Combine both CSVs with a separator
+            var combinedCsv = $"Header Data\n{headerCsv}\n\nUnit Data\n{unitDataCsv}";
+
+            // Generate the filename using Program and Product from the first HeaderData item
+            var program = headerdataList.FirstOrDefault()?.Program ?? "UnknownProgram";
+            var product = headerdataList.FirstOrDefault()?.Product ?? "UnknownProduct";
+            var lotNumber = filterForm.LotNumber ?? "UnknownLot";
+            var operation = filterForm.Operation ?? "UnknownOp";
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+
+            var fileName = $"{program}_{product}_{lotNumber}_{operation}_{timestamp}_ExportData.csv";
+
+            var fileBytes = Encoding.UTF8.GetBytes(combinedCsv);
+            var base64 = Convert.ToBase64String(fileBytes);
+            var dataUrl = $"data:text/csv;base64,{base64}";
+
+            await JS.InvokeVoidAsync("downloadFile", dataUrl, fileName);
+
+            Console.WriteLine($"Exported {headerdataList.Count} header records and {unitdataList.Count} unit data records");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error exporting data: {ex.Message}";
+            Console.WriteLine($"Export error: {ex.Message}");
+        }
+
+    }
+
+    // To export data of both lists
+    private async Task ExportDataTIUQuery()
+    {
+        try
+        {
+            showExportButton = false;
+            showExportButtonTIUQuery = true;
+
+            // Convert complete UnitDataContent list to CSV (not filtered)
+            var unitDataCsv = ConvertToCsv(unitdataList);
+
+            // Create CSV with header
+            var singleCsv = $"Unit Data\n{unitDataCsv}";
+
+            // Generate the filename using TIU information
+            var site = filteredSite ?? "UnknownSite";
+            var tiuNumber = filterFormTIU.TIUNumber ?? "UnknownTIU";
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+
+            var fileName = $"{site}_{tiuNumber}_{timestamp}_TIUQuery_ExportData.csv";
+
+            var fileBytes = Encoding.UTF8.GetBytes(singleCsv);
+            var base64 = Convert.ToBase64String(fileBytes);
+            var dataUrl = $"data:text/csv;base64,{base64}";
+
+            await JS.InvokeVoidAsync("downloadFile", dataUrl, fileName);
+
+            Console.WriteLine($"Exported {unitdataList.Count} unit data records from TIU query");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error exporting TIU data: {ex.Message}";
+            Console.WriteLine($"TIU Export error: {ex.Message}");
+        }
+       
+
+
+    }
+}
+
+

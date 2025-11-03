@@ -1,0 +1,159 @@
+﻿@page "/testpage"
+@using System.Linq
+@using MudBlazor
+@using PinFinder.Core.Controllers
+@using PinFinderSkyPF
+@using DrawingColor = System.Drawing.Color
+@using System.Drawing
+@inject IItuffQueryController ItuffController;
+
+
+
+<MudTable Items="List_2" Striped="true" Bordered="true">
+    <HeaderContent>
+        <MudTh>Site</MudTh>
+        <MudTh>TiuID</MudTh>
+        <MudTh>SUM</MudTh>
+        <MudTh>Fbin</MudTh>
+        <MudTh>VisualID</MudTh>
+        <MudTh>Connector</MudTh>
+        <MudTh>PinName</MudTh>
+        <MudTh>Count</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Site">@context[0]</MudTd>
+        <MudTd DataLabel="TiuID">@context[1]</MudTd>
+        <MudTd DataLabel="SUM">@context[2]</MudTd>
+        <MudTd DataLabel="Fbin">@context[3]</MudTd>
+        <MudTd DataLabel="VisualID">@context[4]</MudTd>
+        <MudTd DataLabel="Connector">@context[5]</MudTd>
+        <MudTd DataLabel="PinName">@context[6]</MudTd>
+        <MudTd DataLabel="Count">@context[7]</MudTd>
+    </RowTemplate>
+</MudTable>
+
+<MudCarousel Class="mx-4 my-4 rounded justify-center" ItemsSource="@_source" Style="height:500px; width:contain; color:inherit;" ShowArrows="@_arrows" ShowBullets="@_bullets" EnableSwipeGesture="@_enableSwipeGesture" AutoCycle="false">
+    <ItemTemplate>
+        <div style="border: thin solid grey; width: 510px; height: 440px; padding: 10px; display: flex; justify-items: center; align-items: center; margin: auto; background-color: #FFFFFF;">
+            <WheelZoom Image="@context" width="450" height="430" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+        </div>
+    </ItemTemplate>
+</MudCarousel>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <MudAlert Color="Color.Error" Severity="Severity.Error">@errorMessage</MudAlert>
+}
+
+@code {
+
+    private bool _arrows = true;
+    private bool _bullets = true;
+    private bool _enableSwipeGesture = true;
+    public string errorMessage = string.Empty;
+
+    private List<List<string>> List_1 = new List<List<string>>
+    {
+        // new List<string> { "site", "tiuid", "sum", "fbin", "visualid", "connector", "pinname" },
+        // new List<string> { "11", "SPRXCC1XT3352", "1A", "1501", "44CC337400202", ";;DH42", "DDR7_CLK_DN[0]" },
+        // new List<string> { "11", "SPRXCC1XT3352", "1A", "1501", "44CC337400202", ";;DH42", "DDR7_CLK_DN[0]" },
+        // new List<string> { "11", "SPRXCC1XT3352", "1A", "1501", "44CC337400202", ";;DH42", "DDR7_CLK_DN[0]" },
+        // new List<string> { "11", "SPRXCC1XT3357", "1A", "1501", "44CC337400207", ";;DH42", "DDR7_CLK_DN[0]" },
+        // new List<string> { "11", "SPRXCC1XT3357", "1A", "1501", "44CC337400272", ";;AA34", "DDR7_CLK_DN[0]" },
+        // new List<string> { "11", "SPRXCC1XT3352", "1A", "1501", "44CC337400202", ";;DH42", "DDR7_CLK_DN[0]" },
+        // new List<string> { "11", "SPRXCC1XT3357", "1A", "1501", "44CC337400207", ";;AA34", "DDR7_CLK_DN[0]" },
+        // new List<string> { "11", "SPRXCC1XT3352", "1A", "1501", "44CC337400202", ";;DH42", "DDR7_CLK_DN[0]" },
+        // new List<string> { "11", "SPRXCC1XT3352", "1A", "1501", "44CC337400202", ";;DH42", "DDR7_CLK_DN[0]" },
+        // new List<string> { "11", "SPRXCC1XT3352", "1A", "1501", "44CC337400202", ";;DH42", "DDR7_CLK_DN[0]" },
+        // new List<string> { "11", "SPRXCC1XT3352", "1A", "1501", "44CC337400202", ";;DH42", "DDR7_CLK_DN[0]" },
+    };
+
+    private List<List<string>> List_2 = new List<List<string>>();
+    public IList<string> _source = new List<string>(); // Source list for MudCarousel component
+
+    
+    protected override async Task OnInitializedAsync()
+    {
+        // Fetch Data
+        await FetchDataAsync();
+       
+        // Dictionary to keep track of row counts based on specific columns
+        Dictionary<string, int> rowCounts = new Dictionary<string, int>();
+
+        // Specify the columns to check for duplicates
+        int[] columnsToCheck = { 3, 9 }; // "tiuid" and "visualid" columns
+
+        // Iterate through the list to count occurrences of each row based on specific columns
+        foreach (var row in List_1.Skip(1)) // Skip header row
+        {
+            // Create a string representation of the row based on specific columns for easy comparison
+            string rowKey = string.Join(",", columnsToCheck.Select(index => row[index]));
+
+            if (rowCounts.ContainsKey(rowKey))
+            {
+                rowCounts[rowKey]++;
+            }
+            else
+            {
+                rowCounts[rowKey] = 1;
+            }
+        }
+
+        // Set to keep track of added row keys to ensure only one instance is added to List_2
+        HashSet<string> addedRowKeys = new HashSet<string>();
+
+        // Iterate through the list again to transfer unique rows with duplicates to List_2
+        foreach (var row in List_1.Skip(1)) // Skip header row
+        {
+            string rowKey = string.Join(",", columnsToCheck.Select(index => row[index]));
+
+            if (!addedRowKeys.Contains(rowKey))
+            {
+                // Create a new row with the count appended as the final column
+                List<string> newRow = new List<string>(row);
+                newRow.Add(rowCounts[rowKey].ToString());
+
+                // Add the new row to List_2
+                List_2.Add(newRow);
+
+                // Mark this row key as added
+                addedRowKeys.Add(rowKey);
+
+                // Add the unique combination of "tiuid" and "site" to the _source list
+                _source.Add($"{row[1]}_{row[0]}");
+            }
+        }
+    }
+
+    // Function to get response from gRPC into List dataRow
+    public async Task FetchDataAsync()
+    {
+        await Task.Run(() =>
+        {
+            try
+            {
+                string lotid = "4440B199"; //4440B199
+                string operationId = "6262"; //6262
+                string summaryName = "1A";
+
+                // var requestHeader = ItuffController.GetHeaderData(lotId,operationId,summaryName);
+                var requestUnitData = ItuffController.GetUnitQueryHandler(lotId, operationId, summaryName);
+
+                if (!string.IsNullOrEmpty(requestUnitData)) // If response not null, pass data requestUnitData into List 1
+                {
+                    List_1.Add(requestUnitData);
+                }
+                else
+                {
+                    errorMessage = "Ituff Controller Query failed to be fetch";
+                    List_1.Clear(); // Make sure clear the list
+                }
+
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"An error occurred: {ex.Message}";
+            }
+        });
+    }
+}

@@ -1,0 +1,155 @@
+﻿@inherits LayoutComponentBase
+@inject IDialogService Dialog
+
+@* MudBlazor Components Required *@ 
+<MudThemeProvider Theme="@_theme" IsDarkMode="_isDarkMode" />
+<MudPopoverProvider />
+
+@* MudBlazor Component needed for dialogs *@
+<MudDialogProvider />
+@* MudBlazor Component needed for snackbars *@
+<MudSnackbarProvider />
+
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudText Typo="Typo.h5" Class="ml-3 align-right">PinFinder</MudText>
+        <MudImage Src="Intel_Logo.png" Width="80" Alt="intel-logo" Class="rounded-lg" />
+        <MudImage Src="pinfinder-skyline.png" Width="80" Alt="pinfinder-skyline" Class="rounded-lg" />
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" contextmenu="User" Color="Color.Inherit" />
+        <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
+        @* <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" OnClick="@WelcomeModeToggle" >
+            <MudGrid Spacing="2" Class="d-flex flex-grow-1">
+                <MudItem xs="6" md="3">
+                    <MudAlert Severity="Severity.Info" Width="64px">
+                        PinFinder Purpose:
+                        <br />
+                        <MudText Typo="Typo.body2" GutterBottom="true">
+                            PinFinder tool helps user quickly find problematic tester channels and corresponding DUT pin locations for failing units in a given test lot and location/operation.
+                        </MudText>
+                    </MudAlert>
+                </MudItem>
+                <MudItem xs="6" md="3">
+                    <MudAlert Severity="Severity.Error" Width="64px">
+                        Notice:
+                        <br />
+                        <MudText Typo="Typo.body2" GutterBottom="true">
+                            For LYA users - If production material disposition will be done using this tool, it is your responsibility to verify that the data provided by the tool is valid.
+                        </MudText>
+                    </MudAlert>
+                </MudItem>
+                <MudItem xs="6" md="3">
+                    <MudAlert Severity="Severity.Warning" Width="64px">
+                        Request?
+                        <br />
+                        <MudText Typo="Typo.body2" GutterBottom="true">
+                            Post Processing only available for the configured products.
+                            Get Pinfinder Support via Pinfinder TFS using the 'Submit Ticket' below if you need to setup Post Processing for that particular product
+                        </MudText>
+                    </MudAlert>
+                </MudItem>
+            </MudGrid>
+        </MudIconButton> *@
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="2">
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent Class="mt-16 pa-4">
+        @Body
+    </MudMainContent>
+</MudLayout>
+
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+@code {
+    private bool _drawerOpen = true;
+    private bool _isDarkMode = true;
+    private MudTheme? _theme = null;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        _theme = new()
+        {
+            PaletteLight = _lightPalette,
+            PaletteDark = _darkPalette,
+            LayoutProperties = new LayoutProperties()
+        };
+    }
+
+
+    private void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private void DarkModeToggle()
+    {
+        _isDarkMode = !_isDarkMode;
+    }
+
+    private readonly PaletteLight _lightPalette = new()
+    {
+        Black = "#110e2d",
+        AppbarText = "#242a31",
+        AppbarBackground = "rgba(255,255,255,0.8)",
+        DrawerBackground = "#ffffff",
+        GrayLight = "#e8e8e8",
+        GrayLighter = "#f9f9f9",
+    };
+
+    private readonly PaletteDark _darkPalette = new()
+    {
+        Primary = "#ffffff",
+        Surface = "#1e1e2d",
+        Background = "#242A31",
+        BackgroundGray = "#212936",
+        AppbarText = "#92929f",
+        AppbarBackground = "rgba(26,26,39,0.8)",
+        DrawerBackground = "#1a1a27",
+        ActionDefault = "#74718e",
+        ActionDisabled = "#9999994d",
+        ActionDisabledBackground = "#605f6d4d",
+        TextPrimary = "#b2b0bf",
+        TextSecondary = "#92929f",
+        TextDisabled = "#ffffff33",
+        DrawerIcon = "#92929f",
+        DrawerText = "#92929f",
+        GrayLight = "#2a2833",
+        GrayLighter = "#1e1e2d",
+        Info = "#4a86ff",
+        Success = "#3dcb6c",
+        Warning = "#ffb545",
+        Error = "#ff3f5f",
+        LinesDefault = "#33323e",
+        TableLines = "#33323e",
+        Divider = "#292838",
+        OverlayLight = "#1e1e2d80",
+    };
+
+    public string DarkLightModeButtonIcon => _isDarkMode switch
+    {
+        true => Icons.Material.Rounded.AutoMode,
+        false => Icons.Material.Outlined.DarkMode,
+
+    };
+
+    private void WelcomeModeToggle()
+    {
+        _isDarkMode = !_isDarkMode;
+    }
+
+   
+
+
+}
+
+

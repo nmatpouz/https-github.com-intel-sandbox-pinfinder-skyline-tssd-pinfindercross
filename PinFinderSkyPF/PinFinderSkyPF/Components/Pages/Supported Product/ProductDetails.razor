@@ -1,0 +1,73 @@
+﻿@page "/productdetails"
+@using MudBlazor
+@using DrawingColor = System.Drawing.Color
+@using System.Drawing
+@using static MudBlazor.CategoryTypes
+@using System.Net.Http.Json
+@using System.Text.Json
+@using System.Text.Json.Serialization;
+@inject HttpClient Http
+
+<MudText Typo="Typo.h5" GutterBottom="true">Product Details of Supported Product in Class Test</MudText>
+<br />
+
+<MudTable Fixed="true" T="ProductDetailsModel" Items="@productList" FixedHeader="true" FixedFooter="true" Hover="true" SortLabel="Sort By" Class="mt-4 relative">
+    <HeaderContent>
+        <MudTh>Product Config Name</MudTh>
+        <MudTh>Package Type</MudTh>
+        <MudTh>Package ID</MudTh>
+        <MudTh>Test Program Name</MudTh>
+        <MudTh>TIU Name</MudTh>
+        <MudTh>Interface Unit Design ID</MudTh>
+        <MudTh>Manufactured Unit Design ID</MudTh>
+        <MudTh>Additional Access Group</MudTh>
+        <MudTh>Package Pin Map Ratio</MudTh>
+        <MudTh>Package Pin Map Offset</MudTh>
+    </HeaderContent>
+    <RowTemplate Context="product">
+        <MudTd DataLabel="Product Config Name">@product.ProductConfigName</MudTd>
+        <MudTd DataLabel="Package Type">@product.PackageType</MudTd>
+        <MudTd DataLabel="Package ID">@product.PackageIdSearchText</MudTd>
+        <MudTd DataLabel="Test Program Name">@product.TestProgramSearchText</MudTd>
+        <MudTd DataLabel="TIU Name">@product.InterfaceUnitIdSearchText</MudTd>
+        <MudTd DataLabel="Interface Unit Design ID">@product.InterfaceUnitDesignId</MudTd>
+        <MudTd DataLabel="Manufactured Unit Design ID">@product.ManufacturedUnitDesignId</MudTd>
+        <MudTd DataLabel="Additional Access Group">@product.AdditionalAccessGroup</MudTd>
+        <MudTd DataLabel="Package Pin Map Ratio">@product.Ratio</MudTd>
+        <MudTd DataLabel="Package Pin Map Offset">@product.Offset</MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+    private List<ProductDetailsModel> productList = new List<ProductDetailsModel>
+    {
+        // Example data
+        new ProductDetailsModel
+        {
+            ProductConfigName = "Product 1",
+            PackageType = "Type A",
+            PackageIdSearchText = "Package ID 1",
+            TestProgramSearchText = "Test Program 1",
+            InterfaceUnitIdSearchText = "TIU 1",
+            InterfaceUnitDesignId = "Design ID 1",
+            ManufacturedUnitDesignId = "Manufactured ID 1",
+            AdditionalAccessGroup = "Access Group 1",
+            Ratio = "1.0",
+            Offset = "0"
+        },
+    };
+
+    public class ProductDetailsModel
+    {
+        public string ProductConfigName { get; set; } = string.Empty;
+        public string PackageType { get; set; } = string.Empty;
+        public string PackageIdSearchText { get; set; } = string.Empty;
+        public string TestProgramSearchText { get; set; } = string.Empty;
+        public string InterfaceUnitIdSearchText { get; set; } = string.Empty;
+        public string InterfaceUnitDesignId { get; set; } = string.Empty;
+        public string ManufacturedUnitDesignId { get; set; } = string.Empty;
+        public string AdditionalAccessGroup { get; set; } = string.Empty;
+        public string Ratio { get; set; } = string.Empty;
+        public string Offset { get; set; } = string.Empty;
+    }
+}

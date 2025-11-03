@@ -1,0 +1,483 @@
+﻿@page "/tiupinmap"
+@namespace PinFinder.UI.Pages
+@using MudBlazor
+@using BlazorPanzoom
+@using PinFinder.Core.Controllers
+@using PinFinder.Core.Domain.Commands.Replies
+@using PinFinder.UI
+@using System.Text
+@using System.Linq;
+@using System.Collections.Generic
+@using Microsoft.AspNetCore.Components
+@using System.Collections.Concurrent;
+@inject IJSRuntime JSRuntime
+@inject IItuffQueryController ItuffController
+@inject SvgQueryController SvgController
+@inject NavigationManager Navigation
+
+<MudText Typo="Typo.h6" GutterBottom="true">TIU Pin Map</MudText>
+
+<MudGrid Spacing="0" Class="ma-1 pa-2 d-flex flex-row flex-wrap align-center">
+    <MudItem xs="6" md="3">
+        <MudText Label="Socket File" Class="ma-1 pa-2" Align="Align.Left">TIu Socket and SocketID:</MudText>
+    </MudItem>
+    <MudItem xs="6" md="3">
+        <MudTextField @bind-Value="currentTiuSchematicSocket" Label="" ReadOnly="true" Variant="Variant.Outlined" Class="custom-label ma-1 pa-2" />
+    </MudItem> 
+</MudGrid>
+
+<MudContainer Class="ma-1 pa-2">
+    <MudGrid Spacing="0" Class="ma-1 pa-2 d-flex flex-row flex-wrap align-center">
+        <MudItem xs="12" md="8">
+            <div style="display: flex; align-items: center;">
+                <MudSelect @bind-Value="selectedTIUString" Label="Select TIu Socket and SocketID" Class="mr-2">
+                    @foreach (var item in tiuIds)
+                    {
+                        <MudSelectItem Value="@item">@item</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudIconButton Icon="@Icons.Material.Filled.Search" OnClick="() => OnTiuIdChanged(selectedTIUString)" Disabled="@_processing" contextmenu="User" Color="Color.Primary" Size="Size.Large" Style="margin-left: 8px; font-size: 1.5rem;"> </MudIconButton>
+            </div>
+            <MudText Label="PinMap" Class="ma-1 pa-2" Align="Align.Left">
+                Pin Map Image:
+            </MudText>
+            <MudCarousel Class="mx-4 my-4 rounded justify-center" @ref="_carousel" ItemsSource="@tiuIds" Style="height: 1100px; width:1500px; color:inherit;" ShowArrows="@_arrows" ShowBullets="false" AutoCycle="false"  @bind-SelectedIndex="selectedIndex" @bind-SelectedIndex:event="OnSelectedIndexChanged">
+                <ItemTemplate>
+                    <div style="position: relative; border: thin solid grey; width: 1200px; height: 1100px; padding: 10px; display: flex; flex-direction: column; justify-items: center; align-items: center; margin: auto; background-color: #FFFFFF;">
+                        @if (context is string tiuId && TiuSvgPair.TryGetValue(tiuId, out var svgContent))
+                        {
+                            <div style="margin-bottom: -1px; font-weight: bold;">@tiuId</div> <!-- Label for the TiuID -->
+                            <WheelZoom @key="svgContent" id="svgContainer" style="width: 100%; height: 100%; object-fit: contain;">
+                                @((MarkupString)svgContent)
+                            </WheelZoom>
+                            <!-- Green triangle at the bottom-left corner -->
+                            <svg style="position: absolute; bottom: 0; left: 0;" width="50" height="50">
+                                <polygon points="0,50 50,50 0,0" style="fill: green;" />
+                            </svg>
+                        }
+                    </div>
+                </ItemTemplate>
+            </MudCarousel>
+        </MudItem>
+
+        <MudItem xs="12" md="8" Class="full-height">
+            <MudTable Fixed="true" Items="@uniqueConnectorList" FixedHeader="true" FixedFooter="true" Hover="true" Striped="true" Class="mt-6 full-height tiu-pin-map-table">
+                <HeaderContent>
+                    <MudTh Class="tiu-pin-map-table-header">TiuID</MudTh>
+                    <MudTh Class="tiu-pin-map-table-header">Connector</MudTh>
+                    <MudTh Class="tiu-pin-map-table-header">Count</MudTh>
+                </HeaderContent>
+                <RowTemplate Context="context">
+                    <MudTd DataLabel="TiuID" @onmouseover="() => OnHover(context.TiuID, context.Connector)">
+                        @context.TiuID.Replace("_", "")
+                    </MudTd>
+                    <MudTd DataLabel="Connector">@context.Connector</MudTd>
+                    <MudTd DataLabel="Count">@context.Count</MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager PageSizeOptions="new int[] { 5, 10, 15, 20, 25, 50, 100, int.MaxValue }" />
+                </PagerContent>
+            </MudTable>
+        </MudItem>
+
+    </MudGrid>
+</MudContainer>
+
+<MudContainer>
+    <div class="color-bar" style="display: flex;">
+        <div class="color-section" style="background-color: #e082c7; width: 60px; height: 15px; position: relative;">
+            <span style="color: black; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px;">1-3</span>
+        </div>
+        <div class="color-section" style="background-color: #3381FF; width: 60px; height: 15px; position: relative;">
+            <span style="color: black; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px;">4-6</span>
+        </div>
+        <div class="color-section" style="background-color: #00FF00; width: 60px; height: 15px; position: relative;">
+            <span style="color: black; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px;">7-9</span>
+        </div>
+        <div class="color-section" style="background-color: #FFC300; width: 60px; height: 15px; position: relative;">
+            <span style="color: black; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px;">10-12</span>
+        </div>
+        <div class="color-section" style="background-color: #FF9933; width: 60px; height: 15px; position: relative;">
+            <span style="color: black; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px;">13-15</span>
+        </div>
+        <div class="color-section" style="background-color: #FF5733; width: 60px; height: 15px; position: relative;">
+            <span style="color: white; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 12px;">16+</span>
+        </div>
+    </div>
+</MudContainer>
+
+<style>
+    .carousel-container {
+    background-color: #f0f0f0;
+    padding: 16px;
+    border-radius: 8px;
+    height: fit-content;
+    }
+
+    .color-bar {
+    display: flex;
+    height: 20px;
+    }
+
+    .color-section {
+    flex: 1;
+    height: 100%;
+    }
+
+    .custom-label {
+    font-size: 5.5rem;
+    }
+
+    .tiu-pin-map-table {
+    color: white; /* Font color for the entire table */
+    background-color: rgb(32,28,28);
+    text-align: center; /* Center the text in the header */
+    }
+    .tiu-pin-map-table-header {
+    background-color: rgb(72,76,92);
+    color: white; /* Font color for the table header */
+    font-size: 1.2rem; /* Increase the font size of the header */
+    text-align: center; /* Center the text in the header */
+    }
+</style>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <MudAlert Color="Color.Error" Severity="Severity.Error">@errorMessage</MudAlert>
+}
+@code {
+    private bool _processing = false;
+    public int selectedIndex = 0;
+    public string selectedTIUString;
+    public string hoverTIUString;
+    public string hoverConnectorString;
+
+    private MudCarousel<string> _carousel;
+
+    private bool _arrows = true;
+    private bool _bullets = false;
+
+    private ElementReference svgContainerRef;
+
+    public string errorMessage = string.Empty;
+    public List<CombinedUnitData> countdataList = new List<CombinedUnitData> { };
+    public List<CombinedUnitData> uniqueDataList = new List<CombinedUnitData> { };
+    public List<CombinedTiuIdData> uniqueConnectorList = new List<CombinedTiuIdData> { };
+
+    public class CombinedUnitData
+    {
+        public string Site { get; set; } = string.Empty;
+        public string TiuID { get; set; } = string.Empty;
+        public string SUM { get; set; } = string.Empty;
+        public string Fbin { get; set; } = string.Empty;
+        public string VisualID { get; set; } = string.Empty;
+        public string Connector { get; set; } = string.Empty;
+        public string PinName { get; set; } = string.Empty;
+        public int Count { get; set; } = 0;
+    }
+    public class CombinedTiuIdData
+    {
+        public string TiuID { get; set; } = string.Empty;
+        public string Connector { get; set; } = string.Empty;
+        public int Count { get; set; } = 0;
+    }
+    public List<SvgData> svgDataList = new List<SvgData> { };
+    public Dictionary<string, List<SvgData>> svgDataDictionary = new Dictionary<string, List<SvgData>>();
+
+    public class SvgData
+    {
+        public string Connector { get; set; } = string.Empty;
+        public string X_ { get; set; } = string.Empty;
+        public string Y_ { get; set; } = string.Empty;
+    }
+
+    public IList<string> _source = new List<string>();
+    private TIUSocket readTIUSocket = new TIUSocket();
+    private string svgImagePath = string.Empty;
+    ConcurrentDictionary<string, string> TiuSvgPair = new ConcurrentDictionary<string, string>();
+    ConcurrentDictionary<string, List<string>> TiuConnectorPair = new ConcurrentDictionary<string, List<string>>();
+    private List<string> tiuIds => TiuSvgPair.Keys.ToList();
+    public string combinedPartUnitTiu = string.Empty;
+    public static string currentTiuSchematicSocket = string.Empty;
+
+    private bool isPanning = false;
+    private double startX, startY;
+    private double viewBoxX = 0, viewBoxY = 0, viewBoxWidth = 1000, viewBoxHeight = 1000;
+
+
+    public class TIUSocket
+    {
+        public string TIUSchematicSocket { get; set; } = string.Empty;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _carousel = new MudCarousel<string>();
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+
+        if (query.TryGetValue("part", out var part) && query.TryGetValue("unitTiu", out var unitTiu) && query.TryGetValue("site", out var site) && query.TryGetValue("lotID", out var lotID) && query.TryGetValue("operationID", out var operationID) && query.TryGetValue("summaryName", out var summaryName))
+        {
+            combinedPartUnitTiu = $"{part}_{unitTiu}";
+            currentTiuSchematicSocket = combinedPartUnitTiu;
+            selectedIndex = tiuIds.IndexOf(currentTiuSchematicSocket);
+            if (selectedIndex == -1)
+            {
+                selectedIndex = 0; // Default to the first item if the TiuID is not found
+            }
+            await FetchDataAsync(site, lotID, operationID, summaryName);
+            GenerateSvgContent(svgDataList);
+            PopulateUniqueConnectorList(TiuConnectorPair);
+            SetDisplay();
+        }
+        else
+        {
+            errorMessage = "Missing query parameters.";
+        }
+    }
+
+    async Task FetchDataAsync(string site, string lotId, string operationId, string summaryName)
+    {
+        try
+        {
+            string package = string.Empty;
+            string progname = string.Empty;
+            string tiuid = string.Empty;
+            string tiuDesignId = string.Empty;
+            string muDesignId = string.Empty;
+
+            var requestHeader = ItuffController.GetHeaderData(lotId, operationId, summaryName);
+            var requestUnitData = ItuffController.GetUnitData(lotId, operationId, summaryName, site);
+
+            if (requestHeader.Result?.HeaderList != null && requestUnitData.Result?.Units != null)
+            {
+                foreach (var header in requestHeader.Result.HeaderList)
+                {
+                    package = header.UniqueFolderName.Split('_')[0];
+                    progname = header.UniqueFolderName.Split('_')[1];
+                    if (header.UniqueFolderName.Split('_').Count() == 4)
+                    {
+                        tiuid = header.UniqueFolderName.Split('_')[2] + '_' + header.UniqueFolderName.Split('_')[3];
+                    }
+                    if (header.UniqueFolderName.Split('_').Count() == 3)
+                    {
+                        tiuid = header.UniqueFolderName.Split('_')[2];
+                    }
+                    tiuDesignId = header.IuDesignId;
+                    muDesignId = header.MuDesignId;
+                }
+            }
+
+            var requestSVG = SvgController.GetSvgData(tiuDesignId, muDesignId, package, progname, tiuid);
+            if (requestSVG.Result?.SvgList != null)
+            {
+                foreach (var svgdata in requestSVG.Result.SvgList)
+                {
+                    svgDataList.Add(new SvgData
+                        {
+                            Connector = svgdata.CONNECT_NUMBER,
+                            X_ = svgdata.X,
+                            Y_ = svgdata.Y,
+                        });
+                }
+            }
+
+            if (requestUnitData.Result?.Units != null)
+            {
+                foreach (var unit in requestUnitData.Result.Units)
+                {
+                    foreach (var test in unit.Value.Tests)
+                    {
+                        countdataList.Add(new CombinedUnitData
+                            {
+                                TiuID = unit.Value.TiuId,
+                                Connector = test.Connector,
+                                PinName = test.PinName
+                            });
+                    }
+                }
+            }
+            else
+            {
+                errorMessage = "Ituff Controller Query failed to be fetched";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred: {ex.Message}";
+            string a = "";
+
+        }
+    }
+    public void OnTiuIdChanged(string newValue)
+    {
+        // selectedTIUString = newValue;
+        // selectedIndex = tiuIds.IndexOf(selectedTIUString);
+        // currentTiuSchematicSocket = selectedTIUString;
+        // _carousel.MoveTo(selectedIndex);
+        // StateHasChanged();
+        ///////////////////////////////
+        // selectedIndex = tiuIds.IndexOf(selectedTIUString);
+        // if (selectedIndex != -1)
+        // {
+        //     currentTiuSchematicSocket = selectedTIUString;
+        //     _carousel.MoveTo(selectedIndex);
+        // }
+        // StateHasChanged();
+        //////////////////////////////
+        selectedTIUString = newValue;
+        selectedIndex = tiuIds.IndexOf(selectedTIUString);
+        currentTiuSchematicSocket = selectedTIUString;
+        _carousel.MoveTo(selectedIndex);
+        StateHasChanged();
+
+    }
+    private void OnSelectedIndexChanged(int newIndex)
+    {
+        selectedIndex = newIndex;
+        if (selectedIndex >= 0 && selectedIndex < tiuIds.Count)
+        {
+            selectedTIUString = tiuIds[selectedIndex];
+            currentTiuSchematicSocket = selectedTIUString;
+        }
+        StateHasChanged();
+
+    }
+    public void SetDisplay()
+    {
+        selectedIndex = tiuIds.FindIndex(item => item == combinedPartUnitTiu.Split("_")[1]);
+    }
+    public void GenerateSvgContent(List<SvgData> svgDataList)
+    {
+        TiuSvgPair.Clear(); // Clear the existing SVG content list
+
+        // Group the countdataList by TiuID
+        var groupedData = countdataList.GroupBy(data => data.TiuID);
+        var connectors = new List<string>();
+
+        foreach (var data in countdataList)
+        {
+            data.Connector = new string(data.Connector.Distinct().ToArray());
+            data.Connector = data.Connector.Replace(";", "").Replace("-", "");
+        }
+
+        Parallel.ForEach(groupedData, group =>
+        {
+            List<string> connectorsFromSvg = new List<string>();
+            var svgBuilder = new StringBuilder();
+            var tiuIdCurrent = group.First().TiuID;
+
+            svgBuilder.AppendLine("<svg width='100%' height='100%' xmlns='http://www.w3.org/2000/svg'>");
+
+            foreach (var svgData in svgDataList)
+            {
+                int rectWidthHeight = 4;
+                int circleOffset = rectWidthHeight / 2;
+                double circleRadDef = 3.5;
+                double distanceBetweenDot = 1;
+
+                var Xdouble = TryConvertToDouble(svgData.X_, out double resultX);
+                var Ydouble = TryConvertToDouble(svgData.Y_, out double resultY);
+
+                // Adjust the position based on the index and distanceBetweenDot
+                double rectX = resultX * distanceBetweenDot;
+                double rectY = resultY * distanceBetweenDot;
+                double cirX = rectX + circleOffset;
+                double cirY = rectY + circleOffset;
+
+                // Draw the rectangle
+                svgBuilder.AppendLine($"<rect id='{svgData.Connector}' x='{rectX}' y='{rectY}' width='{rectWidthHeight}' height='{rectWidthHeight}' fill='black' />");
+
+                connectors = countdataList
+                    .Where(data => data.TiuID == group.First().TiuID)
+                    .Select(data => data.Connector)
+                    .ToList();
+
+                // Find all matching connectors in the current TiuID group and draw circles
+                int matchingCount = connectors.Count(data => data.Contains(svgData.Connector.ToString()));
+                if (matchingCount > 0)
+                {
+                    string fillColor = GetFillColor(matchingCount);
+                    double circleRadScalling = matchingCount / 5;
+                    if (matchingCount >= 20)
+                        circleRadScalling = 4;
+
+                    if (tiuIdCurrent == hoverTIUString && svgData.Connector == hoverConnectorString) // draw selection when hover
+                        svgBuilder.AppendLine($"<circle cx='{cirX}' cy='{cirY}' r='{circleRadDef + circleRadScalling}' fill-opacity='0.6' fill='{fillColor}' stroke='black' stroke-width='1' />");
+                    else
+                        svgBuilder.AppendLine($"<circle cx='{cirX}' cy='{cirY}' r='{circleRadDef + circleRadScalling}' fill-opacity='0.6' fill='{fillColor}' />");
+
+                    var repeatedConnectors = Enumerable.Repeat(svgData.Connector.ToString(), matchingCount);
+                    connectorsFromSvg.AddRange(repeatedConnectors);
+                }
+            }
+            svgBuilder.AppendLine("</svg>");
+
+            TiuConnectorPair.AddOrUpdate(tiuIdCurrent, connectorsFromSvg, (key, existingVal) => connectorsFromSvg);
+            TiuSvgPair.AddOrUpdate(tiuIdCurrent, svgBuilder.ToString(), (key, existingVal) => svgBuilder.ToString());
+        });
+    }
+    public static bool TryConvertToDouble(string input, out double result)
+    {
+        // Use double.TryParse to attempt conversion
+        return double.TryParse(input, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out result);
+    }
+    private string GetFillColor(int count)
+    {
+        if (count >= 1 && count <= 3)
+            return "#e082c7";
+        else if (count >= 4 && count <= 6)
+            return "#3381FF";
+        else if (count >= 7 && count <= 9)
+            return "#00FF00";
+        else if (count >= 10 && count <= 12)
+            return "#FFC300";
+        else if (count >= 13 && count <= 15)
+            return "#FF9933";
+        else if (count > 15)
+            return "#FF5733";
+        else
+            return "#000000"; // Default color if count is outside the specified ranges
+    }
+    public void PopulateUniqueConnectorList(ConcurrentDictionary<string, List<string>> tiuConnectorPair)
+    {
+        // Use a ConcurrentBag to store results in a thread-safe manner
+        var concurrentResults = new ConcurrentBag<CombinedTiuIdData>();
+
+        // Clear the existing list to avoid duplicates
+        uniqueConnectorList.Clear();
+
+        // Use Parallel.ForEach for concurrent processing
+        Parallel.ForEach(tiuConnectorPair, entry =>
+        {
+            string tiuId = entry.Key;
+            List<string> connectors = entry.Value;
+
+            // Group connectors by their name and count occurrences
+            var connectorCounts = connectors.GroupBy(connector => connector)
+                                    .Select(group => new CombinedTiuIdData
+                                        {
+                                            TiuID = tiuId,
+                                            Connector = group.Key,
+                                            Count = group.Count()
+                                        });
+
+            // Add the results to the ConcurrentBag
+            foreach (var item in connectorCounts)
+            {
+                concurrentResults.Add(item);
+            }
+        });
+
+        // Add the results from the ConcurrentBag to the uniqueConnectorList
+        uniqueConnectorList.AddRange(concurrentResults);
+    }
+    private void OnHover(string tiuId, string connector)
+    {
+        hoverTIUString = tiuId;
+        hoverConnectorString = connector;
+        GenerateSvgContent(svgDataList);
+    }
+}
+
+

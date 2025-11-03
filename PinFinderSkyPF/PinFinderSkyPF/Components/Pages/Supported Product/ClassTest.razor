@@ -1,0 +1,114 @@
+﻿@page "/classtest"
+@using MudBlazor
+@using DrawingColor = System.Drawing.Color
+@using System.Drawing
+@using static MudBlazor.CategoryTypes
+@using System.Net.Http.Json
+@using System.Text.Json
+@using System.Text.Json.Serialization;
+@inject HttpClient Http
+
+<MudText Typo="Typo.h6" GutterBottom="true">Supported Products in Class Test</MudText>
+<MudTable Fixed="true" T="ProductClassTestModel" Items="@productList" FixedHeader="true" FixedFooter="true" Hover="true" SortLabel="Sort By" Class="mt-4 relative">
+    <HeaderContent>
+        <MudTh>Product Config Name</MudTh>
+        <MudTh>Package Type</MudTh>
+        <MudTh>Package ID</MudTh>
+        <MudTh>Test Program Name</MudTh>
+        <MudTh>TIU Name</MudTh>
+        <MudTh>Interface Unit Design ID</MudTh>
+        <MudTh>Manufactured Unit Design ID</MudTh>
+        <MudTh>Additional Access Group</MudTh>
+        <MudTh>Package Pin Map Ratio</MudTh>
+        <MudTh>Package Pin Map Offset</MudTh>
+    </HeaderContent>
+    <RowTemplate Context="product">
+        <MudTd DataLabel="Product Config Name">@product.ProductConfigName</MudTd>
+        <MudTd DataLabel="Package Type">@product.PackageType</MudTd>
+        <MudTd DataLabel="Package ID">@product.PackageIdSearchText</MudTd>
+        <MudTd DataLabel="Test Program Name">@product.TestProgramSearchText</MudTd>
+        <MudTd DataLabel="TIU Name">@product.InterfaceUnitIdSearchText</MudTd>
+        <MudTd DataLabel="Interface Unit Design ID">@product.InterfaceUnitDesignId</MudTd>
+        <MudTd DataLabel="Manufactured Unit Design ID">@product.ManufacturedUnitDesignId</MudTd>
+        <MudTd DataLabel="Additional Access Group">@product.AdditionalAccessGroup</MudTd>
+        <MudTd DataLabel="Package Pin Map Ratio">@product.Ratio</MudTd>
+        <MudTd DataLabel="Package Pin Map Offset">@product.Offset</MudTd>
+    </RowTemplate>
+</MudTable>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <MudAlert Color="Color.Error" Severity="Severity.Error">@errorMessage</MudAlert>
+}
+
+@code {
+    private List<ProductClassTestModel> productList = new List<ProductClassTestModel>
+    {
+        // Example data only
+        new ProductClassTestModel
+        {
+            ProductConfigName = string.Empty,
+            PackageType = "Type A",
+            PackageIdSearchText = "Package ID 1",
+            TestProgramSearchText = "Test Program 1",
+            InterfaceUnitIdSearchText = "TIU 1",
+            InterfaceUnitDesignId = "Design ID 1",
+            ManufacturedUnitDesignId = "Manufactured ID 1",
+            AdditionalAccessGroup = "Access Group 1",
+            Ratio = "1.0",
+            Offset = "0"
+        },
+        
+    };
+
+    public class ProductClassTestModel
+    {
+        public string ProductConfigName { get; set; } = string.Empty;
+        public string PackageType { get; set; } = string.Empty;
+        public string PackageIdSearchText { get; set; } = string.Empty;
+        public string TestProgramSearchText { get; set; } = string.Empty;
+        public string InterfaceUnitIdSearchText { get; set; } = string.Empty;
+        public string InterfaceUnitDesignId { get; set; } = string.Empty;
+        public string ManufacturedUnitDesignId { get; set; } = string.Empty;
+        public string AdditionalAccessGroup { get; set; } = string.Empty;
+        public string Ratio { get; set; } = string.Empty;
+        public string Offset { get; set; } = string.Empty;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await FetchDataAsync();
+    }
+
+    private string errorMessage = string.Empty;
+    public async Task FetchDataAsync()
+    {
+        using var httpClient = new HttpClient();
+        var apiUrl = "..."; // Replace actual API to get supported product
+        
+        try
+        {
+            var response = await httpClient.GetAsync(apiUrl);
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonData = await response.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        IgnoreNullValues = true,
+                    };
+                //productList = JsonSerializer.Serialize<List<ProductClassTestModel>>(jsonData, options);
+                var productList = JsonSerializer.Deserialize<List<ProductClassTestModel>>(jsonData);
+                string jsonString = JsonSerializer.Serialize(productList);
+            }
+            else
+            {
+                errorMessage = "Failed to fetch data from the API method.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred: {ex.Message}";
+        }
+    }
+}

@@ -1,0 +1,27 @@
+﻿
+<MudNavMenu>
+    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+    <MudNavLink Href="/tiupinmap" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.DeveloperBoard">TIU Map</MudNavLink>
+    <MudNavLink Href="/postprocessing" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.PostAdd">Post Processing</MudNavLink>
+    <MudNavGroup Title="Supported Product" Icon="@Icons.Material.Filled.Info" Expanded="false">
+        <MudNavLink Href="/classtest" Target="_blank" Icon="fas fa-users" IconColor="Color.Success">Class Test</MudNavLink>
+    </MudNavGroup>
+    <MudNavGroup Title="Bin LookUp" Icon="@Icons.Material.Filled.Info" Expanded="false">
+        <MudNavLink Href="/bin8_bin99" Target="_blank" Icon="fas fa-users" IconColor="Color.Success">Bin8 and Bin99</MudNavLink>
+    </MudNavGroup>
+    <MudNavGroup Title="Support" Icon="@Icons.Material.Filled.SupportAgent" Expanded="false">
+        <MudNavLink Href="https://dev.azure.com/ATTD/STTD_PinFinder/_workitems/recentlyupdated/" Target="_blank" Icon="fas fa-users" IconColor="Color.Success">Submit Ticket</MudNavLink>
+        <MudNavLink Href="https://dev.azure.com/ATTD/STTD_PinFinder/_workitems/recentlycreated/" Target="_blank" Icon="fas fa-user-shield" IconColor="Color.Info">New Product</MudNavLink>
+        @* <MudNavLink Href="mailto:pinfinder_support@intel.com?subject=Mail%20from%20PinFinder%20Website&body=Dear%20PinFinder%20Team,%0D%0A%0D%0AHere%20are%20the%20details%20of%20my%20issue:%0D%0A%0D%0A1.%20Issue%20Description:%0D%0A%0D%0A2.%20Steps%20to%20Reproduce:%0D%0A%0D%0A3.%20Expected%20Outcome:%0D%0A%0D%0A4.%20Actual%20Outcome:%0D%0A%0D%0A5.%20Additional%20Information:%0D%0A%0D%0AThank%20you,%0D%0A[Your%20Name]%0D%0A%0D%0A%0D%0APlease%20submit%20ticket%20directly%20if%20it's%20a%20Error,%20Bug,%20New%20Request%20or%20Feature%20Request.%20No%20need%20an%20email%20if%20it's%20between%20these%20case%20issue.%20Thank%20you." Icon="fas fa-user-shield" IconColor="Color.Info">Email</MudNavLink> *@
+    </MudNavGroup>
+    <MudNavGroup Title="Help" Icon="@Icons.Material.Filled.Help" Expanded="false">
+        <MudNavLink Href="/pinfinderspec" Icon="fas fa-users" IconColor="Color.Success">PinFinder Spec</MudNavLink>
+        <MudNavLink Href="/videoguide" Icon="fas fa-users" IconColor="Color.Success">UI Guide</MudNavLink>
+        <MudNavLink Href="/accessreadme" Icon="fas fa-users" IconColor="Color.Success">Access ReadMe</MudNavLink>
+        <MudNavGroup Title="AGS Access" Icon="@Icons.Material.Filled.Key" Expanded="false">
+            <MudNavLink Target="_blank" Href="https://ags.intel.com/identityiq/ui/rest/redirect?rp1=/accessRequest/accessRequest.jsf&rp2=accessRequest/manageAccess/add?filterKeyword=TMG AT OFFLINE" Icon="fas fa-users" IconColor="Color.Success">Blue Badge</MudNavLink>
+            <MudNavLink Target="_blank" Href="https://ags.intel.com/identityiq/ui/rest/redirect?rp1=/accessRequest/accessRequest.jsf&rp2=accessRequest/manageAccess/add?filterKeyword=Pinfinder" Icon="fas fa-users" IconColor="Color.Success">Green Badge</MudNavLink>
+        </MudNavGroup>
+
+    </MudNavGroup>
+</MudNavMenu>

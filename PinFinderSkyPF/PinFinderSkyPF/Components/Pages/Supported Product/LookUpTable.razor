@@ -1,0 +1,83 @@
+﻿@page "/lookuptable"
+@using MudBlazor
+@using System.Net.Http.Json
+@using System.Text.Json
+@inject HttpClient Http
+
+<MudText Typo="Typo.h6" GutterBottom="true">Look-up Table bin8/bin99 for certain Supported Products</MudText>
+
+<MudTable Fixed="true" T="LookUpModel" Items="@lookupList" FixedHeader="true" FixedFooter="true" Hover="true" SortLabel="Sort By" Class="mt-4 relative">
+    <HeaderContent>
+        <MudTh> IU Design ID </MudTh>
+        <MudTh> MU Design ID </MudTh>
+        <MudTh> Test Name </MudTh>
+        <MudTh> Power Supply </MudTh>
+        <MudTh> Substrate Net Name </MudTh>
+        <MudTh> Connector ID </MudTh>
+    </HeaderContent>
+    <RowTemplate Context="product">
+        <MudTd DataLabel="IU Design ID">@product.IuDesignId</MudTd>
+        <MudTd DataLabel="MU Design ID">@product.MuDesignId</MudTd>
+        <MudTd DataLabel="Test Name">@product.TestName</MudTd>
+        <MudTd DataLabel="Power Supply">@product.PowerSupply</MudTd>
+        <MudTd DataLabel="Substrate Net Name">@product.SubstrateNetName</MudTd>
+        <MudTd DataLabel="Connector ID">@product.ConnectorId</MudTd>
+    </RowTemplate>
+</MudTable>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <MudAlert Color="Color.Error" Severity="Severity.Error">@errorMessage</MudAlert>
+}
+
+@code {
+    private List<LookUpModel> lookupList = new List<LookUpModel>();
+
+    public class LookUpModel
+    {
+        public string IuDesignId { get; set; } = string.Empty;
+        public string MuDesignId { get; set; } = string.Empty;
+        public string TestName { get; set; } = string.Empty;
+        public string PowerSupply { get; set; } = string.Empty;
+        public string SubstrateNetName { get; set; } = string.Empty;
+        public string ConnectorId { get; set; } = string.Empty;
+    }
+
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await FetchDataAsync();
+    }
+
+    public async Task FetchDataAsync()
+    {
+        var apiUrl = "..."; // Replace here with the actual API to get bin8/bin99 details
+
+        try
+        {
+            var response = await Http.GetAsync(apiUrl);
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonData = await response.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        IgnoreNullValues = true,
+                    };
+                //lookupList = JsonSerializer.Serialize<List<LookUpModel>>(jsonData, options);
+                var lookupList = JsonSerializer.Deserialize<List<LookUpModel>>(jsonData);
+                string jsonString = JsonSerializer.Serialize(lookupList);
+
+            }
+            else
+            {
+                errorMessage = "Failed to fetch look-Up data from the API method.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred: {ex.Message}";
+        }
+    }
+}

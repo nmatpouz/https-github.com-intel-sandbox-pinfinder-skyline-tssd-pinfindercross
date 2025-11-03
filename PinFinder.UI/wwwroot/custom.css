@@ -1,0 +1,9 @@
+﻿/* custom.css for MudTable of Suppported Product in Class test */
+.mud-table-striped tbody tr:nth-child(odd) {
+    background-color: #FFFF00; /* Softer grey color #f5f5f5 */
+}
+
+/* custom.css for row of stripped in MudTable of Suppported Product in Class test  */
+.custom-striped-row:nth-child(odd) {
+    background-color: #FFFF00; /* Softer grey color */
+}
